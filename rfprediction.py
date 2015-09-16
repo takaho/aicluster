@@ -6,10 +6,15 @@ import PIL.Image as Image
 import PIL.ImageDraw as ImageDraw
 import PIL.ImageFont as ImageFont
 
+# specific keywords for data management
 KEYWORD_OUTPUT = '__output__'
 KEYWORD_ID = '__id__'
+GROUP_UNDETERMINED = '__undetermined__'
+
+# Graphical presets
 KEYWORDS_NON_NUMERIC = set([KEYWORD_OUTPUT, KEYWORD_ID])
 MARKER_COLORS = ((255,100,100), (100,255,100), (100,100,255), (224,192,0), (128,0,192), (90,224,192))
+
 def load_table(filename, id_field=None, output_field=None):
     """Load Excel or CSV file """
     rpos = filename.rfind('.')
@@ -149,30 +154,46 @@ def generate_classifier(data, fields=None, max_depth=4, num_trees=20):
     rf.fit(vectors, labels)
     return rf, fields, output_groups
 
-def predict_samples(rf, data, output_groups, fields=None):
+def predict_samples(rf, data, output_groups, fields=None, minimum_accuracy_samples=3):
     """Returns [predicted results, accuracy score]
     If output_field is not set (unknown data), accuracy will be set None """
     if fields is None:
         fields = sorted([x_ for x_ in data[0].keys() if x_ not in KEYWORDS_NON_NUMERIC])
     vectors = []
+    labels = []
     l2n = {}
     for i, l in enumerate(output_groups):
         l2n[l] = i
-    labels = []
+    num_labeled = 0
     for datum in data:
-        if KEYWORD_OUTPUT not in datum:
-            labels = None
-            break
+        group = datum.get(KEYWORD_OUTPUT, GROUP_UNDETERMINED)
+        vectors.append([datum[field] for field in fields])
+        if group in l2n:
+            labels.append(l2n[group])
+            num_labeled += 1
         else:
-            labels.append(l2n[datum[KEYWORD_OUTPUT]])
-    for datum in data:
-        vector = []
-        for field in fields:
-            vector.append(datum[field])
-        vectors.append(vector)
+            labels.append(None)
+    #
+    #     if KEYWORD_OUTPUT not in datum:
+    #         labels = None
+    #         break
+    #     else:
+    #         labels.append(l2n[datum[KEYWORD_OUTPUT]])
+    # for datum in data:
+    #     vector = []
+    #     for field in fields:
+    #         vector.append(datum[field])
+    #     vectors.append(vector)
+#    if len(vectors) < minimum_prediction:
     predicted = rf.predict(vectors)
-    if labels is not None:
-        accuracy = sklearn.metrics.accuracy_score(predicted, labels)
+    if num_labeled >= minimum_accuracy_samples:
+        predicted_ = []
+        labels_ = []
+        for i, l in enumerate(labels):
+            if l is not None:
+                predicted_.append(predicted[i])
+                labels_.append(l)
+        accuracy = sklearn.metrics.accuracy_score(predicted_, labels_)
     else:
         accuracy = None
     return predicted, accuracy
@@ -418,6 +439,7 @@ def plot_prediction(forest, data, **kwargs):
     draw = ImageDraw.ImageDraw(image)
     draw.rectangle(((0,0),(size,size)), fill=(255,255,255))
     maximum = forest.n_estimators
+    GRAY = (128,128,128)
     #
     #font = ImageFont.truetype('/Library/Fonts//Courier New.ttf', 24)
     try:
@@ -446,16 +468,16 @@ def plot_prediction(forest, data, **kwargs):
         xy = projection_func(result)
 
         outline = (0,0,0)
-        given = None if KEYWORD_OUTPUT not in datum else datum[KEYWORD_OUTPUT]
+        given = datum.get(KEYWORD_OUTPUT, GROUP_UNDETERMINED)# if KEYWORD_OUTPUT not in datum else datum[KEYWORD_OUTPUT]
         #print(result, xy, given)
-        if given is not None and given != decisions[identifier]:
+        if given == GROUP_UNDETERMINED or given != decisions[identifier]:
             if KEYWORD_ID in datum:
                 label = datum[KEYWORD_ID]
             else:
                 label = '{}'.format(identifier + 1)
-            outline = dotcolors[given]#colors[detected % len(colors)]
+            outline = dotcolors.get(given, GRAY)#[given]#colors[detected % len(colors)]
             fill = (255,255,2555)
-            draw.text((xy[0] + msize, xy[1]), label, fill=(128,128,128), font=font)
+            draw.text((xy[0] + msize, xy[1]), label, fill=GRAY, font=font)
         else:
             fill = dotcolors[given]#colors[detected]
             outline = (0,0,0)
@@ -777,10 +799,15 @@ def execute_analysis(**kargs):
     if verbose:
         for i, gn in enumerate(output_groups):
             sys.stderr.write('Group{}\t{}\n'.format(i + 1, gn))
+    # set "undetermined" in prediction data if the gruop is not included in training data
+    for datum in predictionset:
+        group = datum.get(field_output, None)
+        if group not in output_groups:
+            datum[field_output] = GROUP_UNDETERMINED
 
     # calculate accuracy
     if verbose: sys.stderr.write('Prediction\n')
-    predicted, accuracy = predict_samples(forest, predictionset, output_groups)
+    predicted, accuracy = predict_samples(forest, predictionset, output_groups, fields=fields)
 
     #
     #display_prediction_stats(forest, predictionset, output_groups)

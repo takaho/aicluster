@@ -11,6 +11,8 @@ class MainPanel(wx.Panel):
     EVT_SELECT_TRAINING_FILE = 1
     EVT_SELECT_PROCESS_FILE = 2
     EVT_EXECUTE = 3
+    RANGE_TREE_DEPTH = (2, 10)
+    RANGE_NUM_TREES = (2, 200)
 
     def __init__(self, parent):#, log):
         self.__datadirectory = os.path.curdir#None
@@ -44,11 +46,15 @@ class MainPanel(wx.Panel):
         l3 = wx.StaticText(self, -1, "Number of trees")
         t3 = wx.TextCtrl(self, -1, "20", size=(40, -1))#, validator=IntValidator())
         t3.Bind(wx.EVT_CHAR, self.__onlyNumber, t3)
+        r = MainPanel.RANGE_NUM_TREES
+        l3r = wx.StaticText(self, -1, "[{}-{}]".format(r[0], r[1]))
         self.text_numtrees = t3
 
         l4 = wx.StaticText(self, -1, "Maximum depth")
         t4 = wx.TextCtrl(self, -1, "4", size=(40, -1))#, validator=IntValidator())
         t4.Bind(wx.EVT_CHAR, self.__onlyNumber, t4)
+        r = MainPanel.RANGE_TREE_DEPTH
+        l4r = wx.StaticText(self, -1, "[{}-{}]".format(r[0], r[1]))
         self.text_maxdepth = t4
 
         l5 = wx.StaticText(self, -1, "Report")
@@ -73,8 +79,8 @@ class MainPanel(wx.Panel):
         sizer.AddMany([l1, t1, b1,
                     l2, t2, b2,
                     l5, t5, b5,
-                    l3, t3, (-1,-1),
-                    l4, t4, (-1,-1),
+                    l3, t3, l3r,
+                    l4, t4, l4r,
                     l6, self.output_field, (-1,-1),
                     l7, self.id_field, (-1, -1),
                     bt_ex, (-1,-1),(-1,-1)]
@@ -123,6 +129,7 @@ class MainPanel(wx.Panel):
             except:
                 frame.Show(False)
                 diag = wx.MessageDialog(self, 'cannot open the report', 'ERROR', wx.OK | wx.ICON_ERROR)
+        self.button_execute.SetLabel('Execute')
         self.button_execute.Enable()
         wx.EndBusyCursor()
 
@@ -177,14 +184,15 @@ class MainPanel(wx.Panel):
         if os.path.exists(fn_i) is False:
             sys.stderr.write('File not exists\n')
             return
-        num_trees = int(self.text_numtrees.GetValue())
-        max_depth = int(self.text_maxdepth.GetValue())
+        num_trees = min(MainPanel.RANGE_NUM_TREES[1], max(MainPanel.RANGE_NUM_TREES[0], int(self.text_numtrees.GetValue())))
+        max_depth = min(MainPanel.RANGE_TREE_DEPTH[1], max(MainPanel.RANGE_TREE_DEPTH[0], int(self.text_maxdepth.GetValue())))
         dstdir = self.dstdir.GetValue()
         output_field = self.output_field.GetValue()
         id_field = self.id_field.GetValue()
         params = {'filename_training':fn_t, 'filename_input':fn_i, 'directory_report':dstdir,
         'num_trees':num_trees, 'max_depth':max_depth, 'output_field':output_field, 'id_field':id_field}
         CalcThread(self, params).start()
+        self.button_execute.SetLabel('Calculating')
         wx.BeginBusyCursor()
         return
 
