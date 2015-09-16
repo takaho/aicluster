@@ -1,0 +1,4 @@
+9/16/2015
+  - Repress errors when analysis data contain groups not included in training data set.
+    - Unknown groups will be indicated in gray in distribution plots.
+  - Limits for the number of trees and the depth of trees were set.

@@ -139,8 +139,6 @@ def generate_classifier(data, fields=None, max_depth=4, num_trees=20):
     labels = []
     if fields is None:
         fields = sorted([x_ for x_ in data[0].keys() if x_ not in KEYWORDS_NON_NUMERIC])
-#    else:
-#        fields = sorted([x_ for x_ in fields if x_ not in KEYWORDS_NON_NUMERIC])
     l2n = {}
     output_groups = []
     for datum in data:
@@ -173,18 +171,6 @@ def predict_samples(rf, data, output_groups, fields=None, minimum_accuracy_sampl
             num_labeled += 1
         else:
             labels.append(None)
-    #
-    #     if KEYWORD_OUTPUT not in datum:
-    #         labels = None
-    #         break
-    #     else:
-    #         labels.append(l2n[datum[KEYWORD_OUTPUT]])
-    # for datum in data:
-    #     vector = []
-    #     for field in fields:
-    #         vector.append(datum[field])
-    #     vectors.append(vector)
-#    if len(vectors) < minimum_prediction:
     predicted = rf.predict(vectors)
     if num_labeled >= minimum_accuracy_samples:
         predicted_ = []
@@ -213,13 +199,8 @@ def display_prediction_stats(forest, data, output_groups, fields=None):
             labels = None
         vectors.append([datum[f_] for f_ in fields])
     predicted = forest.predict(vectors)
-    #print(predicted)
-    #print(labels)
     accuracy = sklearn.metrics.accuracy_score(predicted, labels)
-    #print(sklearn.metrics.confusion_matrix(predicted, labels))
-    #print('accuracy={}'.format(accuracy))
     return accuracy
-
 
 def get_group_decision(forest, vector):
     """Aggregated decision by classifiers """
