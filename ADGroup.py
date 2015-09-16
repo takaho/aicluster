@@ -129,7 +129,7 @@ class MainPanel(wx.Panel):
             except:
                 frame.Show(False)
                 diag = wx.MessageDialog(self, 'cannot open the report', 'ERROR', wx.OK | wx.ICON_ERROR)
-        self.button_execute.SetLabel('Execute')
+        #self.button_execute.SetLabel('Execute')
         self.button_execute.Enable()
         wx.EndBusyCursor()
 
@@ -192,7 +192,7 @@ class MainPanel(wx.Panel):
         params = {'filename_training':fn_t, 'filename_input':fn_i, 'directory_report':dstdir,
         'num_trees':num_trees, 'max_depth':max_depth, 'output_field':output_field, 'id_field':id_field}
         CalcThread(self, params).start()
-        self.button_execute.SetLabel('Calculating')
+        #self.button_execute.SetLabel('Calculating')
         wx.BeginBusyCursor()
         return
 
