@@ -1042,7 +1042,7 @@ def save_json_results(filename, trainingset, predictionset, fields, predicted, b
     if os.path.exists(dstdir) is False:
         os.makedirs(dstdir)
     with open(filename, 'w') as fo:
-        json.dump(results, fo)
+        json.dump(results, fo, indent=4, separators=(',', ': '))
     return results
 
 
