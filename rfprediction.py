@@ -3,9 +3,6 @@ import argparse, os, sys, re, math, collections, tempfile
 import sklearn, sklearn.ensemble, sklearn.metrics, numpy
 import json, copy
 import openpyxl, xlrd
-# import PIL.Image as Image
-# import PIL.ImageDraw as ImageDraw
-# import PIL.ImageFont as ImageFont
 
 KEYWORD_OUTPUT = '__output__'
 KEYWORD_ID = '__id__'
@@ -535,90 +532,6 @@ def plot_prediction(forest, data, **kwargs):
     image.save(filename_graph)
     return decisions
 
-# def draw_treemodel(tree, draw, rectangle, fields, **kwargs):
-#     """Draw a tree in a box """
-#     max_depth = kwargs.get('max_depth', 4)
-#     box_hratio = kwargs.get('box_xratio', 0.25)
-#     box_vratio = kwargs.get('box_yratio', 0.10)
-#     leaf_id = sklearn.tree._tree.TREE_LEAF
-#     node_id = 0
-#     next_ids = [0,]
-#     layer = 1
-#     x, y, w, h = rectangle
-#     draw.rectangle(((x,y),(w-1,h-1)), outline=(128,128,128))
-#
-#     dy = h / (max_depth + 1) # vertical step
-#     bw, bh = int(w * box_hratio), int(h * box_vratio) # box size
-#     bx, by = (w - bw) // 2 + x, y + bh / 2# box position
-#     position_cache = {0:[bx , by]}
-#     toffset = bh / 2
-#
-#     draw.rectangle(((bx,by),(bx+bw,by+bh)), outline=(0,0,0))
-#     cnd = '{} < {:.2f}'.format(fields[tree.feature[0]], tree.threshold[0])
-#     draw.text((bx + (bw- draw.textsize(cnd)[0]) // 2, by + toffset), cnd, fill=(0,0,0))
-#
-#     leaves = {}
-#     while 1:
-#         next_layer = []
-#         num_elems = 0
-#         nodes = []
-#         for nid in next_ids:
-#             l = tree.children_left[nid]
-#             r = tree.children_right[nid]
-#             nodes.append([nid, l, tree.children_left[l] == leaf_id])
-#             nodes.append([nid, r, tree.children_left[r] == leaf_id])
-#             if tree.children_left[l] != leaf_id:
-# #            if l != leaf_id:
-#                 next_layer.append(l)
-#             else:
-#                 leaves[l] = tree.value[nid][0]
-#             if tree.children_left[r] != leaf_id:#r != leaf_id:
-#                 next_layer.append(r)
-#             else:
-#                 leaves[r] = tree.value[nid][0]
-#             num_elems += 2
-#         for i in range(num_elems):
-#             parent, node_id, is_leaf = nodes[i]
-#             bx = ((i + .5) * w / num_elems) + x - bw / 2
-#             by = y + dy * layer + bh
-#             px, py = position_cache[parent]
-#             draw.line(((bx+bw // 2, by),(px+bw*.5, py+bh)), fill=(0,0,0))
-#             position_cache[node_id] = bx, by
-#             if not is_leaf:
-#                 draw.rectangle(((bx,by),(bx+bw,by+bh)),outline=(10,10,20))
-#                 cnd = '{} < {:.2f}'.format(fields[tree.feature[node_id]], tree.threshold[node_id])
-#                 draw.text((bx + (bw - draw.textsize(cnd)[0]) / 2, by + toffset), cnd, fill=(0,0,0))
-#         next_ids = next_layer
-#         if len(next_ids) == 0: break
-#         layer += 1
-#
-#     colors = MARKER_COLORS
-#     for lid in leaves.keys():
-#         bx, by = position_cache[lid]
-#         value = tree.value[lid][0]
-#         total = sum(value)
-#         color = [0,0,0]
-#         sections = []
-#         for i, val in enumerate(value): sections.append([i, val])
-#         theta = -90
-#         rect = ((bx+(bw-bh)/2,by),(bx+(bw+bh)/2,by+bh))
-#         for elem in sorted(sections, key=lambda x_:x_[1], reverse=True):
-#             #red, green, blue = colors[elem[0] % len(colors)]
-#             num = elem[1]
-#             if num <= 0: continue
-#             rad = int(round(num * 360.0 / total))
-#             t = (theta + rad * .5) / 180 * math.pi
-#             if num == total:
-#                 draw.ellipse(rect, fill=colors[elem[0] % len(colors)])
-#                 xl, yl = (bx + bw * .5, by + 10)
-#             else:
-#                 draw.pieslice(rect, start=int(round(theta)), end=int(round(theta + rad)), fill=colors[elem[0] % len(colors)])
-#                 xl = bx + bw * .5 + bh * 0.3 * math.cos(t)
-#                 yl = by + bh * .5 + bh * 0.3 * math.sin(t) - 5
-#             draw.text((xl, yl), '{}'.format(int(round(num))), fill=(64,64,64))
-#             theta += rad
-#         draw.ellipse(rect, outline=(20,30,20))
-
 def select_best_tree(forest, data, fields, output_groups):#, **kwargs):
     """find best classifier tree and give score"""
     labels = []
@@ -654,25 +567,6 @@ def select_best_tree(forest, data, fields, output_groups):#, **kwargs):
         raise Exception('no tree')
     return best_tree, best_score
 
-# def draw_tree(tree, fields, **kwargs):
-#     """Draw a tree
-#     parameters
-#     size:given size (default=300)
-#     filename: filename of output (default temporary)
-#
-#     return
-#     fileanme
-#      """
-#     size = kwargs.get('size', 300)
-#     filename = kwargs.get('filename', tempfile.mktemp('.png'))
-#     image = Image.new('RGB', (size, size))
-#     #verbose = kwargs.get('verbose', False)
-#     draw = ImageDraw.ImageDraw(image)
-#     draw.rectangle(((0,0), (size,size)), fill=(255,255,255))
-#     draw_treemodel(tree, draw, (0,0,size,size), fields)
-#     image.save(filename)
-#     return filename
-
 def __get_timestamp():
     # timestamp
     import time
@@ -682,94 +576,6 @@ def __get_timestamp():
         timestamp += '00{}'.format(n)[-2:]
     return timestamp
 
-# def generate_report(data, decisions, **kwargs):
-#     """Output pdf document
-#     accuracy_table : given x decided
-#     directory_output : report
-#     """
-#     dstdir = kwargs.get('directory_output', 'out')
-#     accuracy_table = kwargs.get('accuracy_table', None)
-#     filename_plot = kwargs.get('filename_plot', None)
-#     filename_tree = kwargs.get('filename_tree', None)
-#     filename_bar = kwargs.get('filename_bar', None)
-#     tree_accuracy = kwargs.get('tree_accuracy', None)
-#     output_groups = kwargs.get('output_groups', None)
-#     conditions = kwargs.get('conditions', None)
-#     field_id = kwargs.get('id', None)
-#     fields = kwargs.get('fields', None)
-#
-#     timestamp = __get_timestamp()
-#     if os.path.exists(dstdir) is False: os.makedirs(dstdir)
-#     html = os.path.join(dstdir, 'report_{}.html'.format(timestamp))
-#     contents = """<!DOCTYPE HTML><head><title>Results</title></head>"""
-#     if conditions is not None:
-#         contents += '<h1>Condisions</h1>\n<table>'
-#         for prop in enumerate(sorted(conditions.keys())):
-#             contents += '<tr><td>{}</td><td>{}</td></tr>\n'.format(prop, conditions[prop])
-#         contents += '</table>\n'
-#
-#     if filename_plot is not None and os.path.exists(filename_plot):
-#         fn = 'plot_{}.png'.format(timestamp)
-#         dstfile = os.path.join(dstdir, fn)
-#         with open(filename_plot, 'rb') as fi, open(dstfile, 'wb') as fo:
-#             fo.write(fi.read())
-#         contents += '<h1>Decision plot</h1><img src="{}" width=400 height=400>\n'.format(fn)
-#     if filename_bar is not None and os.path.exists(filename_bar):
-#         fn = 'bars_{}.png'.format(timestamp)
-#         dstfile = os.path.join(dstdir, fn)
-#         with open(filename_bar, 'rb') as fi, open(dstfile, 'wb') as fo:
-#             fo.write(fi.read())
-#         contents += '<h1>Individual scores</h1><img src="{}" width=400 height=400>\n'.format(fn)
-#
-#     if filename_tree is not None and os.path.exists(filename_tree):
-#         fn = 'tree_{}.png'.format(timestamp)
-#         dstfile = os.path.join(dstdir, fn)
-#         with open(filename_tree, 'rb') as fi, open(dstfile, 'wb') as fo:
-#             fo.write(fi.read())
-#         contents += '<h1>Best predicting tree</h1><img src="{}" width=400 height=400>\n'.format(fn)
-# #        if tree_accuracy is not None:
-# #            contents += 'accuracy={}<br>'.format(tree_accuracy)
-#         if tree_accuracy is not None:
-#             contents += 'accuracy={}<br/>\n'.format(tree_accuracy)
-#     if accuracy_table is not None:
-#         table= '<h1>Accuracy</h1><table>'
-#         table += '<tr><th></th>'
-#         for og in output_groups: table += '<th>{}</th>'.format(og)
-#         table += '</tr>\n'
-#         for i, og in enumerate(output_groups):
-#             table += '<tr><th>{}</th>'.format(og)
-#             for n in accuracy_table[i]:
-#                 table += '<td>{}</td>'.format(n)
-#             table += '</tr>\n'
-#         table += '</table>\n'
-#         contents += table
-#
-#     table = '<h1>Results</h1>\n<table>'
-#     name_given = KEYWORD_OUTPUT in data[0]
-#     if name_given:
-#         table += '<tr><td>ID</td><td>Given</td><td>Predicted</td></tr>\n'
-#     else:
-#         table += '<tr><td>ID</td><td>Predicted</td></tr>\n'
-#     if fields is not None:
-#         for f in fields:
-#             table += '<td>{}</td>'.format(f)
-#     table += '</tr>\n'
-#     for i, datum in enumerate(data):
-#         table += '<tr><td>{}</td>'.format(i + 1)
-#         if name_given:
-#             table += '<td>{}</td>'.format(datum[KEYWORD_OUTPUT])
-#         table += '<td>{}</td></tr>'.format(decisions[i])
-#         if fields is not None:
-#             for f in fields:
-#                 table += '<td>{}</td>'.format(datum[f])
-#
-#         table += '</tr>\n'
-#     table += '</table>'
-#     contents += table
-#     contents += '</body>\n</html>\n'
-#     with open(html, 'w') as fo:
-#         fo.write(contents)
-#     return html#os.path.join(dstdir, 'report.html')
 
 def load_files_and_determine_fields(filename_training, filename_diagnosis=None, field_id=None, field_output=None, verbose=False):
     """Return (normalized traninig data set, normalized prediction data set, available fields)"""
@@ -791,30 +597,6 @@ def load_files_and_determine_fields(filename_training, filename_diagnosis=None, 
                         sys.stderr.write('{} is not included in diagnosis set\n'.format(f))
             fields = [f_ for f_ in fields if f_ in pfields]
     return trainingset, predictionset, fields
-
-# def generate_trained_forest(**kargs):
-#     """
-#     parameters
-#     training_file : filename of training
-#     diagnosis_file : filename of diagnosis
-#     id_field : field name of ID
-#     output_field : field name of output
-#     verbose : verbosity
-#
-#     return
-#      """
-#     import tempfile, copy
-#     filename_training = kargs['training_file']
-#     filename_diagnosis = kargs.get('diagnosis_file', None)#filename_training)
-#     field_output = kargs.get('output_field', 'OUT')
-#     field_id = kargs.get('id_field', None)
-#     verbose = kargs.get('verbose', False)
-#
-#     # Set output field
-#     trainingset, predictionset, fields = load_files_and_determine_fields(filename_training, filename_diagnosis, field_id, field_output)
-#     if predictionset is None:
-#         predictionset = copy.deepcopy(trainingset)
-#     return trainingset, predictionset, fields
 
 def _obtain_forest(trainingset, predictionset, fields, num_trees, max_depth, num_iteration=0, verbose=False):
     """
@@ -908,110 +690,6 @@ def encode_forest(forest):
     trees = [encode_tree(est.tree_) for est in forest.estimators_]
     return trees
 
-# def execute_analysis(**kargs):
-#     """
-#     parameters
-#     training_file : filename of training
-#     diagnosis_file : filename of diagnosis
-#     num_trees : number of trees in a forest
-#     max_depth : maximum depth
-#     id_field : field name of ID
-#     output_field : field name of output
-#     verbose : verbosity
-#      """
-#     import tempfile, copy
-#     filename_training = kargs['training_file']
-#     filename_diagnosis = kargs.get('diagnosis_file', None)#filename_training)
-#     num_trees = kargs.get('num_trees', 20)
-#     max_depth = kargs.get('max_depth', 4)
-#     directory_output = kargs.get('output', 'rf_out')#tempfile.mktemp('.pdf'))
-#     field_output = kargs.get('output_field', 'OUT')
-#     field_id = kargs.get('id_field', None)
-#     verbose = kargs.get('verbose', False)
-#
-#     # Set output field
-#     trainingset = load_table(filename_training, field_id, field_output)
-#     complete_missing_values(trainingset)
-#     predictionset = None
-#     fields = sorted([f_ for f_ in trainingset[0] if f_ not in KEYWORDS_NON_NUMERIC])
-#     if filename_diagnosis is not None and os.path.exists(filename_diagnosis):
-#         if filename_training != filename_diagnosis:
-#             predictionset = load_table(filename_diagnosis, field_id, field_output)
-#             complete_missing_values(predictionset)
-#             pfields = sorted([f_ for f_ in predictionset[0] if f_ not in KEYWORDS_NON_NUMERIC])
-#             if verbose:
-#                 for f in pfields:
-#                     if f not in fields:
-#                         sys.stderr.write('{} is not included in training set\n'.format(f))
-#                 for f in fields:
-#                     if f not in pfields:
-#                         sys.stderr.write('{} is not included in diagnosis set\n'.format(f))
-#             fields = [f_ for f_ in fields if f_ in pfields]
-#
-#     if predictionset is None:
-#         predictionset = copy.deepcopy(trainingset)
-#
-#     if verbose:
-#         for i, f in enumerate(fields):
-#             sys.stderr.write('{}\t{}\n'.format(i, f))
-#         sys.stderr.write('OUTPUT\t{}\n'.format(field_output))
-#         if field_id:
-#             sys.stderr.write('ID\t{}\n'.format(field_id))
-#
-#     # calculation
-#     if verbose: sys.stderr.write('Fit samples\n')
-#     forest, fields, output_groups = generate_classifier(trainingset, fields=fields, max_depth=max_depth, num_trees=num_trees)
-#     if verbose:
-#         for i, gn in enumerate(output_groups):
-#             sys.stderr.write('Group{}\t{}\n'.format(i + 1, gn))
-#
-#     # calculate accuracy
-#     if verbose: sys.stderr.write('Prediction\n')
-#     predicted, accuracy = predict_samples(forest, predictionset, output_groups, fields=fields)
-#
-#     #
-#     #display_prediction_stats(forest, predictionset, output_groups)
-#     #given = [d[KEYWORD_OUTPUT] for d in predictionset]
-# #    print(given)
-#
-#     if verbose: sys.stderr.write('Generating reports\n')
-#     filename_plot = tempfile.mktemp('.png')#os.path.join(directory_output, 'plot.png')
-#     filename_bar = tempfile.mktemp('.png')
-#     #filename = 'box.png'#tempfile.mktemp('.txt')
-#
-#     # 3D view
-#     decisions = plot_prediction(forest, predictionset, fields=fields, output_groups=output_groups,
-#         filename_graph=filename_plot, filename_bar=filename_bar)
-#     if verbose:
-#         for i, d in enumerate(decisions):
-#             sys.stderr.write('{}\t{}\n'.format(i, d))
-#
-#     #print(filename_png)
-#     num_groups = len(output_groups)
-#     accuracy_table = [[0] * num_groups for i in range(num_groups)]
-#     if KEYWORD_OUTPUT in predictionset[0]:
-#         l2n = {}
-#         for i, gr in enumerate(output_groups): l2n[gr] = i
-#         for j, datum in enumerate(predictionset):
-#             given = datum[KEYWORD_OUTPUT]
-#             gr_ = decisions[j]
-#             if given in l2n and gr_ in l2n:
-#                 accuracy_table[l2n[given]][l2n[gr_]] += 1
-#     if verbose:
-#         sys.stderr.write(repr(accuracy_table) + '\n')
-#
-#     best_tree, best_score = select_best_tree(forest, trainingset, fields, output_groups)
-#     #print('best score={}'.format(best_score))
-#     filename_tree = draw_tree(best_tree, fields, size=400)
-#     #print(filename_tree)
-#
-#     report_file = generate_report(predictionset, decisions, accuracy_table=accuracy_table, tree_accuracy=best_score, filename_tree=filename_tree, treescore=best_score,
-#     filename_plot=filename_plot, filename_bar=filename_bar,
-#     directory_output=directory_output, output_groups=output_groups, fields=fields)
-#     for fn in filename_tree, filename_plot:
-#         if os.path.exists(fn): os.unlink(fn)
-#
-#     return report_file#directory_output
 
 def save_json_results(filename, trainingset, predictionset, fields, predicted, best_forest, best_tree, output_groups, weight=None, condition=None):
     treeout = encode_tree(best_tree)
@@ -1035,7 +713,8 @@ def save_json_results(filename, trainingset, predictionset, fields, predicted, b
     #exit()
 
     results = {'best_tree':treeout, 'forest':forestout, 'group_label':output_groups,
-        'prediction':predicted, 'trainingset':trainingset, 'analysisset':predictionset, 'field_id':KEYWORD_ID, 'field_out':KEYWORD_OUTPUT, 'field':fields}
+        'prediction':predicted, 'trainingset':trainingset, 'analysisset':predictionset,
+        'field_id':KEYWORD_ID, 'field_out':KEYWORD_OUTPUT, 'field':fields}
     if condition: results['condition'] = condition
     if weight: results['weight'] = weight
     dstdir = os.path.dirname(filename)
@@ -1100,6 +779,14 @@ def execute_analysis(**kargs):
     summary = save_json_results(filename, trainingset, predictionset, fields, predicted, best_forest, best_tree, output_groups, weights, conditions)
     return summary
 
+def __trim_data_fields(data, fields):
+    trimmed = []
+    for datum in data:
+        values = {}
+        for f in fields:
+            values[f] = datum[f]
+        trimmed.append(values)
+    return trimmed
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -1108,13 +795,11 @@ if __name__ == '__main__':
     parser.add_argument('-o', default='out', help='output directory', metavar='directory')
     parser.add_argument('-n', default=20, type=int, help='number of trees', metavar='number')
     parser.add_argument('-d', default=4, type=int, help='maximum depth of decision tree', metavar='number')
-#    parser.add_argument('-c', default=None, help='columns', metavar='columns separated by commas')
     parser.add_argument('-F', default="OUT", help='output column', metavar='field name')
     parser.add_argument('-I', default='ID', help='identifier column', metavar='field name')
-    #parser.add_argument('-g', default='box.png', help='graphics', metavar='filename (PNG)')
     parser.add_argument('--best', default=None, metavar='filename', help='output best tree (PDF)')
     parser.add_argument('--verbose', action='store_true', help='verbosity')
-    #parser.add_argument('--json', action='store_true', help='json format')
+    parser.add_argument('--without-rawdata', action='store_true', help='remove rawdata from report')
     parser.add_argument('--iteration', type=int, default=0, help='the number of iteration to estimate weights of parameters')
     args = parser.parse_args()
 
@@ -1142,6 +827,11 @@ if __name__ == '__main__':
     timestamp = __get_timestamp()
     filename = os.path.join(dstdir, 'report_{}.json'.format(timestamp))
     summary = save_json_results(filename, trainingset, predictionset, fields, predicted, best_forest, best_tree, output_groups, weights, conditions)
+
+    if args.without_rawdata: # remove rawdata
+        fields = [KEYWORD_ID, KEYWORD_OUTPUT]
+        summary['trainingset'] = __trim_data_fields(summary['trainingset'], fields)
+        summary['analysisset'] = __trim_data_fields(summary['trainingset'], fields)
 
     import rfreport
     rfreport.generate_report_document(summary, dstdir)

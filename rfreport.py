@@ -246,7 +246,15 @@ def __format_data_table(data, fields=None):
                 if fo in row:
                     header.append(fo)
                     break
-        fields = header + fields
+    flds = []
+    for f in fields:
+        accepted = False
+        for datum in table:
+            if f in datum:
+                accepted = True
+                break
+        if accepted: flds.append(f)
+    fields = header + flds#ields
 
     decision = data.get('prediction', None)
     contents = '<table id="prediction_table">\n'
@@ -356,6 +364,7 @@ def generate_report(key, data, dstdir, timestamp, verbose=False):
                 return contents
     except Exception as e:
         sys.stderr.write('ERROR :{}\n'.format(repr(e)))
+        print(key)
         return '<!--ERROR-->'.format(repr(e).replace('>', ''))
     return '<!--NO_DATA:{}-->'.format(key)
 
