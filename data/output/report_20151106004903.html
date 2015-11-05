@@ -1,0 +1,86 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title></title>
+<style type="text/css">
+body {font-size:small; margin:5%; } h2 {fond-size:large;color:#546;}
+#prediction_table tr:nth-child(even){background:#eee;}
+#prediction_table {border:1px solid black; border-spacing:0; font-size:x-small; font-family:monospace;}
+thead{font-weight:bold; background:#444;color:white;}
+td{white-space:nowrap;}
+th{white-space:nowrap;}
+.failure {color:#f00;}
+</style>
+</head>
+<body>
+<h1>Random forest clustering report</h1>
+<h2>Conditions</h2>
+<table>
+<tr><td>Iteration</td><td>1</td></tr>
+<tr><td>Number of trees</td><td>20</td></tr>
+<tr><td>Training data</td><td>/GitHub/aicluster/data/input/traningdata-2004.xlsx</td></tr>
+<tr><td>Maximum depth</td><td>4</td></tr>
+<tr><td>Analysis data</td><td>/GitHub/aicluster/data/input/analysisdata-2009.xlsx</td></tr>
+</table>
+
+<h2>Best tree</h2>
+<img src="tree_20151106004903.png" id="besttree"><br>
+<p>Accuracy = <span id="best_tree_score">93.62%</span></p>
+<h2>Predicted</h2>
+<img src="bar_20151106004903.png" id="bargraph">
+<h2>Parameter occurrence</h2>
+<img src="weight_20151106004903.png" id="weightgraph">
+<h2>Results</h2>
+<table id="prediction_table">
+<thead><tr><th>Predicted</th><th>ID</td><th>Observed</td><th>Beef</td><th>Bread</td><th>Cereals</td><th>Chicken</td><th>Fish-paste_products</td><th>Fish_and_shellfish</td><th>Fresh_fish_and_shellfish</td><th>Fresh_meat</td><th>Ham_and_sausages</td><th>Meat</td><th>Meat_products</td><th>Mixed_ground_meat</td><th>Noodles</td><th>Other_cereals</td><th>Other_fresh_meat</td><th>Other_meat_products</td><th>Other_processed_fish</td><th>Pork</td><th>Rice</td><th>Salted_and_dried_fish</td></tr></thead>
+<tbody><tr class="success"><td>East</td><td>Hokkaido</td><td>East</td><td>590</td><td>2030</td><td>6889</td><td>845</td><td>588</td><td>7082</td><td>4236</td><td>3757</td><td>922</td><td>5108</td><td>1351</td><td>77</td><td>1337</td><td>359</td><td>264</td><td>429</td><td>934</td><td>1981</td><td>3163</td><td>1323</td></tr>
+<tr class="success"><td>East</td><td>Aomori</td><td>East</td><td>846</td><td>1830</td><td>6803</td><td>822</td><td>503</td><td>7086</td><td>4450</td><td>3960</td><td>852</td><td>5185</td><td>1225</td><td>60</td><td>1506</td><td>242</td><td>223</td><td>372</td><td>898</td><td>2009</td><td>3225</td><td>1234</td></tr>
+<tr class="success"><td>East</td><td>Iwate</td><td>East</td><td>750</td><td>1690</td><td>6832</td><td>751</td><td>536</td><td>7545</td><td>4831</td><td>3618</td><td>716</td><td>4648</td><td>1030</td><td>45</td><td>1379</td><td>278</td><td>151</td><td>314</td><td>790</td><td>1922</td><td>3485</td><td>1388</td></tr>
+<tr class="success"><td>East</td><td>Miyagi</td><td>East</td><td>995</td><td>1990</td><td>8281</td><td>767</td><td>883</td><td>7287</td><td>4729</td><td>4174</td><td>897</td><td>5427</td><td>1254</td><td>54</td><td>1400</td><td>307</td><td>168</td><td>357</td><td>742</td><td>2190</td><td>4584</td><td>932</td></tr>
+<tr class="success"><td>East</td><td>Akita</td><td>East</td><td>902</td><td>1738</td><td>8707</td><td>1058</td><td>552</td><td>8419</td><td>5388</td><td>4589</td><td>834</td><td>5794</td><td>1205</td><td>49</td><td>1652</td><td>224</td><td>251</td><td>372</td><td>918</td><td>2328</td><td>5093</td><td>1562</td></tr>
+<tr class="success"><td>East</td><td>Yamagata</td><td>East</td><td>1607</td><td>1661</td><td>7437</td><td>837</td><td>617</td><td>7582</td><td>4700</td><td>5135</td><td>953</td><td>6460</td><td>1325</td><td>62</td><td>1640</td><td>268</td><td>185</td><td>372</td><td>911</td><td>2443</td><td>3868</td><td>1355</td></tr>
+<tr class="success"><td>East</td><td>Fukushima</td><td>East</td><td>767</td><td>1838</td><td>8192</td><td>835</td><td>594</td><td>6925</td><td>4207</td><td>4129</td><td>973</td><td>5379</td><td>1250</td><td>57</td><td>1389</td><td>263</td><td>171</td><td>278</td><td>872</td><td>2299</td><td>4702</td><td>1251</td></tr>
+<tr class="success"><td>East</td><td>Ibaraki</td><td>East</td><td>975</td><td>2034</td><td>8181</td><td>874</td><td>524</td><td>6649</td><td>4194</td><td>4046</td><td>906</td><td>5228</td><td>1182</td><td>87</td><td>1357</td><td>351</td><td>116</td><td>276</td><td>777</td><td>1993</td><td>4439</td><td>1154</td></tr>
+<tr class="success"><td>East</td><td>Tochigi</td><td>East</td><td>1057</td><td>2263</td><td>8523</td><td>802</td><td>593</td><td>6746</td><td>4125</td><td>4082</td><td>997</td><td>5369</td><td>1287</td><td>104</td><td>1594</td><td>387</td><td>104</td><td>290</td><td>820</td><td>2015</td><td>4279</td><td>1209</td></tr>
+<tr class="success"><td>East</td><td>Gumma</td><td>East</td><td>796</td><td>2091</td><td>7848</td><td>697</td><td>528</td><td>5933</td><td>3678</td><td>3492</td><td>919</td><td>4685</td><td>1194</td><td>64</td><td>1564</td><td>329</td><td>110</td><td>275</td><td>738</td><td>1825</td><td>3864</td><td>988</td></tr>
+<tr class="success"><td>East</td><td>Saitama</td><td>East</td><td>1317</td><td>2444</td><td>7528</td><td>960</td><td>551</td><td>6446</td><td>4013</td><td>4720</td><td>1014</td><td>6042</td><td>1322</td><td>102</td><td>1564</td><td>383</td><td>127</td><td>308</td><td>759</td><td>2213</td><td>3137</td><td>1124</td></tr>
+<tr class="success"><td>East</td><td>Chiba</td><td>East</td><td>1435</td><td>2504</td><td>7655</td><td>939</td><td>582</td><td>6890</td><td>4397</td><td>4701</td><td>964</td><td>5946</td><td>1245</td><td>96</td><td>1389</td><td>368</td><td>117</td><td>281</td><td>765</td><td>2113</td><td>3395</td><td>1145</td></tr>
+<tr class="success"><td>East</td><td>Tokyo</td><td>East</td><td>1729</td><td>2645</td><td>6940</td><td>1093</td><td>575</td><td>7058</td><td>4505</td><td>5355</td><td>1057</td><td>6724</td><td>1369</td><td>106</td><td>1434</td><td>393</td><td>125</td><td>311</td><td>823</td><td>2303</td><td>2468</td><td>1154</td></tr>
+<tr class="success"><td>East</td><td>Kanagawa</td><td>East</td><td>1658</td><td>2649</td><td>7375</td><td>1044</td><td>685</td><td>7206</td><td>4438</td><td>5261</td><td>1135</td><td>6764</td><td>1503</td><td>121</td><td>1484</td><td>442</td><td>106</td><td>368</td><td>840</td><td>2332</td><td>2801</td><td>1243</td></tr>
+<tr class="success"><td>East</td><td>Niigata</td><td>East</td><td>806</td><td>2070</td><td>11159</td><td>753</td><td>558</td><td>7164</td><td>4410</td><td>4102</td><td>895</td><td>5302</td><td>1199</td><td>60</td><td>1388</td><td>311</td><td>138</td><td>304</td><td>851</td><td>2345</td><td>7390</td><td>1345</td></tr>
+<tr class="success"><td>East</td><td>Toyama</td><td>East</td><td>1325</td><td>2564</td><td>9438</td><td>736</td><td>806</td><td>7690</td><td>5037</td><td>4340</td><td>1051</td><td>5717</td><td>1377</td><td>171</td><td>1411</td><td>327</td><td>129</td><td>326</td><td>796</td><td>1979</td><td>5137</td><td>1051</td></tr>
+<tr class="success"><td>East</td><td>Ishikawa</td><td>East</td><td>1873</td><td>2553</td><td>8661</td><td>824</td><td>763</td><td>8160</td><td>5801</td><td>5161</td><td>1027</td><td>6480</td><td>1319</td><td>171</td><td>1363</td><td>402</td><td>197</td><td>293</td><td>613</td><td>2096</td><td>4343</td><td>984</td></tr>
+<tr class="failure"><td>West</td><td>Fukui</td><td>East</td><td>2221</td><td>2622</td><td>9755</td><td>1097</td><td>775</td><td>8155</td><td>5598</td><td>5676</td><td>1184</td><td>7219</td><td>1543</td><td>177</td><td>1414</td><td>329</td><td>215</td><td>359</td><td>683</td><td>1967</td><td>5390</td><td>1099</td></tr>
+<tr class="success"><td>East</td><td>Yamanashi</td><td>East</td><td>1003</td><td>2099</td><td>7400</td><td>815</td><td>638</td><td>6595</td><td>3829</td><td>4383</td><td>909</td><td>5562</td><td>1179</td><td>77</td><td>1429</td><td>253</td><td>190</td><td>270</td><td>894</td><td>2297</td><td>3619</td><td>1235</td></tr>
+<tr class="success"><td>East</td><td>Nagano</td><td>East</td><td>886</td><td>2033</td><td>7646</td><td>746</td><td>636</td><td>6788</td><td>3945</td><td>4021</td><td>866</td><td>5246</td><td>1225</td><td>70</td><td>1364</td><td>321</td><td>130</td><td>359</td><td>912</td><td>2188</td><td>3928</td><td>1294</td></tr>
+<tr class="success"><td>East</td><td>Gifu</td><td>East</td><td>1407</td><td>2134</td><td>7649</td><td>867</td><td>656</td><td>5797</td><td>3477</td><td>4434</td><td>1187</td><td>5935</td><td>1501</td><td>116</td><td>1394</td><td>345</td><td>129</td><td>314</td><td>706</td><td>1915</td><td>3776</td><td>959</td></tr>
+<tr class="success"><td>East</td><td>Shizuoka</td><td>East</td><td>949</td><td>2281</td><td>7730</td><td>920</td><td>699</td><td>7162</td><td>4415</td><td>4372</td><td>1010</td><td>5718</td><td>1346</td><td>113</td><td>1358</td><td>358</td><td>153</td><td>335</td><td>791</td><td>2237</td><td>3734</td><td>1257</td></tr>
+<tr class="success"><td>East</td><td>Aichi</td><td>East</td><td>1495</td><td>2562</td><td>7519</td><td>1004</td><td>754</td><td>5906</td><td>3641</td><td>4899</td><td>1151</td><td>6346</td><td>1447</td><td>138</td><td>1514</td><td>354</td><td>133</td><td>296</td><td>649</td><td>2130</td><td>3088</td><td>861</td></tr>
+<tr class="failure"><td>West</td><td>Mie</td><td>East</td><td>2434</td><td>2399</td><td>8041</td><td>1149</td><td>751</td><td>7291</td><td>4758</td><td>5976</td><td>1072</td><td>7348</td><td>1372</td><td>149</td><td>1365</td><td>354</td><td>130</td><td>299</td><td>680</td><td>2114</td><td>3923</td><td>1103</td></tr>
+<tr class="success"><td>West</td><td>Shiga</td><td>West</td><td>2754</td><td>2618</td><td>9744</td><td>1226</td><td>684</td><td>6976</td><td>4362</td><td>6453</td><td>1158</td><td>7906</td><td>1453</td><td>144</td><td>1321</td><td>364</td><td>190</td><td>295</td><td>777</td><td>2138</td><td>5441</td><td>1153</td></tr>
+<tr class="success"><td>West</td><td>Kyoto</td><td>West</td><td>2636</td><td>2732</td><td>7926</td><td>1279</td><td>730</td><td>6975</td><td>4528</td><td>6396</td><td>1030</td><td>7676</td><td>1280</td><td>148</td><td>1338</td><td>368</td><td>154</td><td>249</td><td>561</td><td>2180</td><td>3488</td><td>1155</td></tr>
+<tr class="success"><td>West</td><td>Osaka</td><td>West</td><td>2559</td><td>2731</td><td>7447</td><td>1201</td><td>742</td><td>6501</td><td>4254</td><td>6219</td><td>970</td><td>7432</td><td>1212</td><td>137</td><td>1361</td><td>338</td><td>218</td><td>243</td><td>546</td><td>2104</td><td>3016</td><td>959</td></tr>
+<tr class="success"><td>West</td><td>Hyogo</td><td>West</td><td>2679</td><td>2973</td><td>7963</td><td>1279</td><td>825</td><td>6622</td><td>4280</td><td>6495</td><td>1069</td><td>7841</td><td>1346</td><td>178</td><td>1385</td><td>373</td><td>234</td><td>277</td><td>572</td><td>2126</td><td>3232</td><td>945</td></tr>
+<tr class="success"><td>West</td><td>Nara</td><td>West</td><td>2946</td><td>2652</td><td>8248</td><td>1170</td><td>774</td><td>7250</td><td>4683</td><td>6644</td><td>1064</td><td>7987</td><td>1343</td><td>148</td><td>1315</td><td>361</td><td>198</td><td>279</td><td>614</td><td>2182</td><td>3920</td><td>1179</td></tr>
+<tr class="success"><td>West</td><td>Wakayama</td><td>West</td><td>3030</td><td>2586</td><td>8008</td><td>1187</td><td>823</td><td>6875</td><td>4402</td><td>6928</td><td>972</td><td>8142</td><td>1214</td><td>158</td><td>1212</td><td>294</td><td>315</td><td>242</td><td>518</td><td>2238</td><td>3916</td><td>1132</td></tr>
+<tr class="success"><td>West</td><td>Tottori</td><td>West</td><td>1541</td><td>2306</td><td>7345</td><td>1038</td><td>975</td><td>6961</td><td>4191</td><td>4846</td><td>1042</td><td>6137</td><td>1292</td><td>248</td><td>1359</td><td>311</td><td>199</td><td>249</td><td>518</td><td>1820</td><td>3369</td><td>1277</td></tr>
+<tr class="success"><td>West</td><td>Shimane</td><td>West</td><td>1629</td><td>2193</td><td>8621</td><td>1131</td><td>933</td><td>7010</td><td>4577</td><td>5048</td><td>901</td><td>6222</td><td>1175</td><td>169</td><td>1346</td><td>363</td><td>232</td><td>274</td><td>504</td><td>1887</td><td>4719</td><td>997</td></tr>
+<tr class="success"><td>West</td><td>Okayama</td><td>West</td><td>1944</td><td>2605</td><td>8050</td><td>1104</td><td>700</td><td>6305</td><td>4176</td><td>5464</td><td>913</td><td>6675</td><td>1211</td><td>195</td><td>1424</td><td>313</td><td>290</td><td>298</td><td>528</td><td>1931</td><td>3708</td><td>901</td></tr>
+<tr class="success"><td>West</td><td>Hiroshima</td><td>West</td><td>2158</td><td>2409</td><td>7690</td><td>1131</td><td>806</td><td>6561</td><td>4209</td><td>5582</td><td>1044</td><td>6939</td><td>1356</td><td>202</td><td>1336</td><td>332</td><td>290</td><td>312</td><td>634</td><td>1801</td><td>3612</td><td>912</td></tr>
+<tr class="success"><td>West</td><td>Yamaguchi</td><td>West</td><td>2204</td><td>2218</td><td>7681</td><td>1108</td><td>917</td><td>7064</td><td>4644</td><td>5410</td><td>957</td><td>6669</td><td>1258</td><td>187</td><td>1260</td><td>285</td><td>224</td><td>301</td><td>500</td><td>1687</td><td>3919</td><td>1004</td></tr>
+<tr class="success"><td>West</td><td>Tokushima</td><td>West</td><td>2411</td><td>2522</td><td>7962</td><td>1104</td><td>954</td><td>5952</td><td>3715</td><td>5649</td><td>899</td><td>6745</td><td>1096</td><td>165</td><td>1334</td><td>350</td><td>167</td><td>197</td><td>402</td><td>1802</td><td>3756</td><td>880</td></tr>
+<tr class="success"><td>West</td><td>Kagawa</td><td>West</td><td>2196</td><td>2484</td><td>8160</td><td>1097</td><td>909</td><td>6313</td><td>4133</td><td>5503</td><td>887</td><td>6630</td><td>1127</td><td>168</td><td>1817</td><td>361</td><td>292</td><td>240</td><td>481</td><td>1750</td><td>3498</td><td>790</td></tr>
+<tr class="success"><td>West</td><td>Ehime</td><td>West</td><td>2140</td><td>2347</td><td>7316</td><td>1102</td><td>1044</td><td>6164</td><td>3896</td><td>5391</td><td>798</td><td>6407</td><td>1016</td><td>202</td><td>1408</td><td>375</td><td>206</td><td>218</td><td>443</td><td>1741</td><td>3186</td><td>781</td></tr>
+<tr class="success"><td>West</td><td>Kochi</td><td>West</td><td>1919</td><td>2169</td><td>6615</td><td>1108</td><td>878</td><td>7246</td><td>4603</td><td>4979</td><td>755</td><td>5923</td><td>944</td><td>181</td><td>1250</td><td>326</td><td>145</td><td>189</td><td>490</td><td>1626</td><td>2871</td><td>1274</td></tr>
+<tr class="success"><td>West</td><td>Fukuoka</td><td>West</td><td>1993</td><td>2357</td><td>7282</td><td>1273</td><td>728</td><td>6312</td><td>3977</td><td>5601</td><td>860</td><td>6762</td><td>1161</td><td>151</td><td>1291</td><td>322</td><td>298</td><td>301</td><td>518</td><td>1886</td><td>3312</td><td>1089</td></tr>
+<tr class="success"><td>West</td><td>Saga</td><td>West</td><td>2071</td><td>2153</td><td>6653</td><td>1213</td><td>880</td><td>5990</td><td>3825</td><td>5652</td><td>878</td><td>6843</td><td>1191</td><td>158</td><td>1233</td><td>262</td><td>325</td><td>313</td><td>449</td><td>1884</td><td>3005</td><td>837</td></tr>
+<tr class="success"><td>West</td><td>Nagasaki</td><td>West</td><td>1622</td><td>2114</td><td>6918</td><td>1087</td><td>1056</td><td>6487</td><td>4141</td><td>5086</td><td>887</td><td>6267</td><td>1181</td><td>203</td><td>1241</td><td>315</td><td>251</td><td>294</td><td>446</td><td>1923</td><td>3247</td><td>844</td></tr>
+<tr class="success"><td>West</td><td>Kumamoto</td><td>West</td><td>1945</td><td>1748</td><td>6729</td><td>1236</td><td>668</td><td>5373</td><td>3506</td><td>5447</td><td>865</td><td>6622</td><td>1174</td><td>153</td><td>1145</td><td>282</td><td>351</td><td>309</td><td>417</td><td>1762</td><td>3553</td><td>782</td></tr>
+<tr class="success"><td>West</td><td>Oita</td><td>West</td><td>2147</td><td>1967</td><td>7974</td><td>1254</td><td>699</td><td>5732</td><td>3674</td><td>5593</td><td>853</td><td>6744</td><td>1152</td><td>137</td><td>1106</td><td>289</td><td>225</td><td>299</td><td>431</td><td>1830</td><td>4612</td><td>927</td></tr>
+<tr class="success"><td>West</td><td>Miyazaki</td><td>West</td><td>1634</td><td>1734</td><td>6036</td><td>1366</td><td>597</td><td>5621</td><td>3540</td><td>5265</td><td>833</td><td>6413</td><td>1148</td><td>139</td><td>1178</td><td>264</td><td>246</td><td>315</td><td>512</td><td>1880</td><td>2861</td><td>972</td></tr>
+<tr class="success"><td>West</td><td>Kagoshima</td><td>West</td><td>1494</td><td>1767</td><td>6798</td><td>1375</td><td>863</td><td>6340</td><td>4056</td><td>5585</td><td>788</td><td>6639</td><td>1054</td><td>153</td><td>1240</td><td>309</td><td>256</td><td>266</td><td>571</td><td>2306</td><td>3482</td><td>851</td></tr>
+<tr class="success"><td>West</td><td>Okinawa</td><td>West</td><td>856</td><td>1766</td><td>5902</td><td>691</td><td>436</td><td>4000</td><td>2581</td><td>3692</td><td>585</td><td>4954</td><td>1261</td><td>115</td><td>1089</td><td>429</td><td>229</td><td>676</td><td>727</td><td>1801</td><td>2617</td><td>257</td></tr>
+</tbody></table>
+
+</body>
+</html>
