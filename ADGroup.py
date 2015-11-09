@@ -266,7 +266,7 @@ class AppMainWindow(wx.Frame):
         #self.ShowStatusBar()
         MainPanel(self)
 
-        self.SetTitle("Atopy cluster machine")
+        self.SetTitle("AI cluster machine")
         self.SetPosition((200, 200))
         self.SetSize((600, 400))
         self.Show(True)
