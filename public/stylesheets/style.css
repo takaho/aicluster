@@ -1,0 +1,22 @@
+body {
+  padding: 50px;
+  font: 14px "Geneva", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00B7FF;
+}
+
+.figure { float:left; margin:25px; }
+table {border-collapse: collapse; }
+td, th {
+  white-space:nowrap;
+  font-size:small;
+  font-family: monospace;
+  text-align:center;
+}
+th { background: #ccc; }
+tr:nth-child(even) { background:#f0f0f0; }
+
+/* dialog */
+.no-close .ui-dialog-titlebar-close {display: none }

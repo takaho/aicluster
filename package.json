@@ -1,0 +1,17 @@
+{
+  "name": "aiCluster-server",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node aicserver"
+  },
+  "dependencies": {
+    "express": "3.0.4",
+    "async":"*",
+    "dateformat":"*",
+    "sqlite3":"*",
+    "temp":"*",
+	"crypto":"*",
+    "ejs": "*"
+  }
+}

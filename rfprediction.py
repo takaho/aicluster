@@ -8,6 +8,7 @@ KEYWORD_OUTPUT = '__output__'
 KEYWORD_ID = '__id__'
 KEYWORDS_NON_NUMERIC = set([KEYWORD_OUTPUT, KEYWORD_ID])
 MARKER_COLORS = ((255,100,100), (100,255,100), (100,100,255), (224,192,0), (128,0,192), (90,224,192))
+
 def load_table(filename, id_field=None, output_field=None):
     """Load Excel or CSV file """
     rpos = filename.rfind('.')
@@ -324,7 +325,7 @@ def get_decision_results(forest, data, fields):
                 maxscore = v
                 detected = i
 #        results.append(decision)
-        results.append({'predicted':detected, 'score':scores})
+        results.append({'prediction':detected, 'score':scores})
     return results
 
 def plot_prediction(forest, data, **kwargs):
@@ -691,7 +692,9 @@ def encode_forest(forest):
     return trees
 
 
-def save_json_results(filename, trainingset, predictionset, fields, predicted, best_forest, best_tree, output_groups, weight=None, condition=None):
+def pack_json_results(trainingset, predictionset, fields, predicted, best_forest, best_tree, output_groups, weight=None, condition=None):
+    """Compose a JSON object having all processed data.
+    """
     treeout = encode_tree(best_tree)
     forestout = encode_forest(best_forest)
 
@@ -707,7 +710,7 @@ def save_json_results(filename, trainingset, predictionset, fields, predicted, b
                 if v > max_val:
                     max_dec = j
                     max_val = v
-            predicted[i]['best_tree'] = max_dec
+            predicted[i]['best_tree'] = max_dec # determined by best tree
             #print('PREDICTION BY A TREE : {} => {}'.format(i, max_dec))
     #print(predicted)
     #exit()
@@ -717,11 +720,6 @@ def save_json_results(filename, trainingset, predictionset, fields, predicted, b
         'field_id':KEYWORD_ID, 'field_out':KEYWORD_OUTPUT, 'field':fields}
     if condition: results['condition'] = condition
     if weight: results['weight'] = weight
-    dstdir = os.path.dirname(filename)
-    if os.path.exists(dstdir) is False:
-        os.makedirs(dstdir)
-    with open(filename, 'w') as fo:
-        json.dump(results, fo, indent=4, separators=(',', ': '))
     return results
 
 
@@ -776,7 +774,7 @@ def execute_analysis(**kargs):
     # save data
     timestamp = __get_timestamp()
     filename = os.path.join(dstdir, 'report_{}.json'.format(timestamp))
-    summary = save_json_results(filename, trainingset, predictionset, fields, predicted, best_forest, best_tree, output_groups, weights, conditions)
+    summary = save_json_results(filename, trainingset, predictionset, fields, predicted, best_forest, best_tree, output_groups, weights, )
     return summary
 
 def __trim_data_fields(data, fields):
@@ -791,7 +789,7 @@ def __trim_data_fields(data, fields):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', default=None, help='input CSV file', metavar='filename')
-    parser.add_argument('-t', help='teaching data', default='data/numeric_table.csv', metavar='filename')
+    parser.add_argument('-t', help='training data', default=None, metavar='filename')
     parser.add_argument('-o', default='out', help='output directory', metavar='directory')
     parser.add_argument('-n', default=20, type=int, help='number of trees', metavar='number')
     parser.add_argument('-d', default=4, type=int, help='maximum depth of decision tree', metavar='number')
@@ -801,14 +799,33 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', action='store_true', help='verbosity')
     parser.add_argument('--without-rawdata', action='store_true', help='remove rawdata from report')
     parser.add_argument('--iteration', type=int, default=0, help='the number of iteration to estimate weights of parameters')
+    parser.add_argument('--key', metavar='characters', default=None, help='unique ID')
     args = parser.parse_args()
 
+    if 2 <= args.n < 200:
+        num_trees = args.n
+    else:
+        num_trees = 20
+    if 2 <= args.d < 10:
+        depth = args.d
+    else:
+        depth = 4
+    if 0 < args.iteration < 1000:
+        iteration = args.iteration
+    else:
+        iteration = 0
+
     conditions = {}
-    conditions['Training data'] = args.t
-    conditions['Analysis data'] = args.i
-    conditions['Number of Trees'] = args.n
-    conditions['Maximum depth'] = args.d
-    conditions['Iteration'] = args.iteration
+    # conditions['Training data'] = args.t
+    # conditions['Analysis data'] = args.i
+    # conditions['Number of trees'] = num_trees
+    # conditions['Maximum depth'] = depth
+    # conditions['Iteration'] = iteration
+    conditions['training_data_file'] = args.t
+    conditions['analysis_data_file'] = args.i
+    conditions['num_trees'] = num_trees
+    conditions['depth'] = depth
+    conditions['iterations'] = iteration
 
     if args.verbose:
         for key, value in conditions.items():
@@ -818,23 +835,50 @@ if __name__ == '__main__':
     iteration = args.iteration
     dstdir = args.o
 
-    trainingset, predictionset, fields \
-    = load_files_and_determine_fields(filename_training=args.t, filename_diagnosis=args.i, field_id=args.I, field_output=args.F, verbose=args.verbose)
-    best_forest, best_tree, weights, output_groups = _obtain_forest(trainingset, predictionset, fields, args.n, args.d, iteration, args.verbose)
+    # data loading
+    try:
+        trainingset, predictionset, fields \
+        = load_files_and_determine_fields(filename_training=args.t, filename_diagnosis=args.i, field_id=args.I, field_output=args.F, verbose=args.verbose)
+    except Exception as e:
+        sys.stderr.write('error while loading : ' + repr(e))
+        raise e
+    # forest formation
+    try:
+        best_forest, best_tree, weights, output_groups = _obtain_forest(trainingset, predictionset, fields, args.n, args.d, iteration, args.verbose)
+    except Exception as e:
+        sys.stderr.write('error while forest formation : ' + repr(e))
+        raise e
+    # prediction
     if predictionset is None:
         predictionset = copy.deepcopy(trainingset)
-    predicted = get_decision_results(best_forest, predictionset, fields)
-    timestamp = __get_timestamp()
-    filename = os.path.join(dstdir, 'report_{}.json'.format(timestamp))
-    summary = save_json_results(filename, trainingset, predictionset, fields, predicted, best_forest, best_tree, output_groups, weights, conditions)
+    try:
+        predicted = get_decision_results(best_forest, predictionset, fields)
+    except Exception as e:
+        sys.stderr.write('error while prediction : ' + e)
+        raise e
 
-    if args.without_rawdata: # remove rawdata
+    # Save data
+    timestamp = __get_timestamp()
+    summary = pack_json_results(trainingset, predictionset, fields, predicted, best_forest, best_tree, output_groups, weights, conditions)
+    if args.key: # unique key for interaction with other processes
+        summary['key'] = args.key
+    if args.without_rawdata: # remove rawdata for privacy concern
         fields = [KEYWORD_ID, KEYWORD_OUTPUT]
         summary['trainingset'] = __trim_data_fields(summary['trainingset'], fields)
         summary['analysisset'] = __trim_data_fields(summary['trainingset'], fields)
 
-    import rfreport
-    rfreport.generate_report_document(summary, dstdir)
+    if dstdir.lower().endswith('.json'): # save JSON only
+        filename = dstdir
+        dstdir = None
+        with open(filename, 'w') as fo:
+            json.dump(summary, fo, indent=4, separators=(',', ': '))
+    else: # HTML reports
+        if os.path.exists(dstdir) is False:
+            os.makedirs(dstdir)
 
-#    execute_analysis(training_file=args.t, diagnosis_file=args.i, num_trees=args.n,
-#        max_depth=args.d, output=args.o, output_field=args.F, id_field=args.I, verbose=args.verbose)
+        filename = os.path.join(dstdir, 'report_{}.json'.format(timestamp))
+        with open(filename, 'w') as fo:
+            json.dump(summary, fo, indent=4, separators=(',', ': '))
+        # visualization
+        import rfreport
+        rfreport.generate_report_document(summary, dstdir)

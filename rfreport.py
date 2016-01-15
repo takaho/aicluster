@@ -72,7 +72,7 @@ def draw_bar_chart(names, predicted, group_labels=None, size=400, filename=None)
         x1 = xcnv(1)
         draw.text((x0 - draw.textsize(name)[0] - spacer, y0), name, fill=(0,0,0))
         score = result.get('score', [])
-        decision = int(result.get('predicted', None))
+        decision = int(result.get('prediction', None))
         if decision is not None:#s[i] is not None:#output_groups is not None:
             color = colors[decision]#__MARKER_COLORS[decision]
             if group_labels is not None:
@@ -276,7 +276,7 @@ def __format_data_table(data, fields=None):
     # values
     for i, datum in enumerate(table):
         if decision is not None:
-            d = int(decision[i]['predicted'])
+            d = int(decision[i]['prediction'])
             gp = group_labels[d]
             gg = datum.get(fo, None)
             if gp == gg:
@@ -287,7 +287,7 @@ def __format_data_table(data, fields=None):
                 elem = '<tr>'
         contents += elem#'<tr>'
         if decision is not None:
-            d = int(decision[i]['predicted'])
+            d = int(decision[i]['prediction'])
             if group_labels is not None and 0 <= d < len(group_labels):
                 contents += '<td>{}</td>'.format(group_labels[d])
             else:
@@ -355,15 +355,19 @@ def generate_report(key, data, dstdir, timestamp, verbose=False):
             if 'analysisset' in data:
                 return __format_data_table(data, data.get('field', None))
         elif key == 'condition':
+            clabels = {'num_trees':'Number of trees', 'depth':'Maximum depth',
+                'iteration':'Iterations',
+                'training_data_file':'Training data', 'analysis_data_file':'Analysis data'}
             if 'condition' in data:
                 condition = data['condition']
                 contents = '<table>\n'
                 for key, value in condition.items():
-                    contents += '<tr><td>{}</td><td>{}</td></tr>\n'.format(key, value)
+                    contents += '<tr><td>{}</td><td>{}</td></tr>\n'.format(clabels.get(key, key), value)
                 contents += '</table>\n'
                 return contents
     except Exception as e:
         sys.stderr.write('ERROR :{}\n'.format(repr(e)))
+        raise
         print(key)
         return '<!--ERROR-->'.format(repr(e).replace('>', ''))
     return '<!--NO_DATA:{}-->'.format(key)
