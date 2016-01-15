@@ -53,7 +53,6 @@ function open_database(filename, table, callback) {
       db.get('select name from sqlite_master where name=?', table,
         function(err, row) {
           if (!err) {
-            console.log('NAME CHECK ' + row);
             if (!row) {
               if (__verbose) {
                 process.stderr.write('creating table\n');

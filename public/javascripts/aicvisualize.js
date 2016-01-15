@@ -1,6 +1,6 @@
 var aic = {};
 
-aic.__polling_period = 2000;
+aic.__polling_period = 1000;//0;
 aic.__panel_size = 400;
 aic.__padding = 0.05; // percent of canvas
 aic.__spacer = 5;
@@ -24,6 +24,8 @@ aic.display_message = function(code, message) {
   var modal = code <= 0;
   if (aic.__dialog === null) {
     aic.__dialog = $('<div>').attr('id', 'dialog').text(message).dialog({modal:modal});
+  } else {
+    aic.__dialog.text(message);
   }
 };
 
@@ -35,7 +37,6 @@ aic.hide_message = function() {
 }
 
 aic.load_data = function(key, element_id) {
-  aic.hide_message();
   if (aic.__verbose) {process.stderr.write('loading data : ' + key);}
   if (element_id) {
     aic.__container = element_id;
@@ -52,6 +53,7 @@ aic.load_data = function(key, element_id) {
       function(data) { // receive JSON object
         console.log(data);
         if (data.state >= 1 && data.prediction) {
+          aic.hide_message();
           aic.visualize(data);
         } else if (data.message === 'processing') {
           aic.display_message(0, 'Wait for a while');//calculation failed " + data.message);
@@ -113,6 +115,9 @@ aic.visualize = function(data) {
   $(document).tooltip();
 };
 
+/**
+  Create rawdata table.
+*/
 aic.generate_rawdata_table = function(data) {
   var table = $('<table>');
   var fields = data.field;
@@ -176,6 +181,9 @@ aic.__create_canvas = function(width, height) {
   return cnv;
 }
 
+/**
+  Draw a representative tree in CANVAS element.
+*/
 aic.draw_best_tree = function(data) {
   var size = aic.__panel_size;
   var cnv = aic.__create_canvas(size, size);
@@ -278,12 +286,9 @@ aic.draw_best_tree = function(data) {
     }
   }
   ctx.restore();
-  //console.log(layers);
 
   // draw conditions
   ctx.save();
-  //ctx.lineWidth = 1;
-  //ctx.strokeStyle = 'darkgray';
   ctx.font = '10pt Times';
 
   for (i = 0; i < tree.length; i++) {
@@ -302,21 +307,12 @@ aic.draw_best_tree = function(data) {
       var lh = 14;
       ctx.beginPath();
 
-      //ctx.fillRect(lx, ly, lw, lh);
       ctx.rect(lx, ly, lw, lh);
       ctx.fill();
       ctx.stroke();
 
       ctx.fillStyle = 'black';
       ctx.fillText(condition, p0[0] - hs, p0[1]);
-      // var children = node.children;
-      // for (j = 0; j < children.length; j++) {
-      //   var p1 = node2pos[children[j]];
-      //   ctx.beginPath()
-      //   ctx.moveTo(p0[0], p0[1]);
-      //   ctx.bezierCurveTo(p0[0], p0[1], p1[0], p0[1], p1[0], p1[1]);
-      //   ctx.stroke();
-      // }
     }
   }
   ctx.restore();
@@ -334,12 +330,11 @@ aic.__create_label_data_element = function(value, labels) {
   return td;
 };
 
+/**
+  Create a table element containing predicted results.
+*/
 aic.generate_prediction_table = function(data) {
   var having_rawdata = typeof data.analysisset !== 'undefined' && data.analysisset !== null;
-  // console.log(having_rawdata);
-  // console.log(typeof data);
-  // console.log(typeof data.analysiset);
-
   var i, j;
   var tr;
   var labels = data.group_label;
@@ -397,6 +392,9 @@ aic.generate_prediction_table = function(data) {
   return table;
 };
 
+/**
+  Generate loadings of parameters in HTML elements.
+*/
 aic.generate_weight_table = function(data) {
   var table = $('<table>').attr('id', 'weight_table');
   $('<tr>').append($('<th>').text('Property')).append($('<th>').text('Loading')).appendTo(table);
@@ -414,7 +412,7 @@ aic.generate_weight_table = function(data) {
 
   for (var i = 0; i < weights.length; i++) {
     //console.log(weights[i]);
-    var loading = weights[i][1];
+    var loading = weights[i][1].toFixed(4);
     var w = parseInt(bar_width * loading / val_max * 100) * 0.01;
     //var w = weights[i][1]
     var tr = $('<tr>').append($('<td>').text(weights[i][0])).appendTo(table);
@@ -427,73 +425,6 @@ aic.generate_weight_table = function(data) {
   return table;
 };
 
-// aic.draw_prediction_results = function(cnv, data) {
-// //  console.log('predictions');
-//   var labels = data.group_label;
-//   var predictions = data.prediction;
-//   console.log(data.prediction);
-//
-//   var width = cnv.width();
-//   var height = cnv.height();
-//   var left = width * aic.__padding;
-//   var right = width * (1.0 - aic.__padding);
-//   var top = height * (1.0 - aic.__padding);
-//   var bottom = height * aic.__padding;
-//
-//   var colors = ['CornflowerBlue','HotPink', 'Teal', 'Peru', 'DarkMagenta', 'GoldenRod', 'LightBlue', 'LightSteelBlue', 'RebeccaPurple'];
-//   //console.log(width + ' x ' + height);
-//   cnv.attr('width', width).attr('height', height);
-//   var ctx = cnv[0].getContext('2d');
-// //  ctx.fillStyle = 'white';//white';
-// //  ctx.fillRect(0, 0, width, height);
-//   var left = aic.__padding;
-//   var wid_bar = (right - left) * 0.60;
-//   var hgt_bar = (top - bottom) / predictions.length * 0.75;
-//   //console.log(predictions);
-//   console.log(labels);
-//   for (var i = 0; i < predictions.length; i++) {
-//     ctx.save();
-//     var y = parseFloat(i + 1) / (predictions.length + 1) * (top - bottom);
-//     var x0 = left + (right - left) * 0.2;
-//     var score = predictions[i].score;
-// //    console.log(predictions[i]);
-//     for (var j = 0; j < score.length; j++) {
-//     //  console.log(x0 + ',' + wid_bar);
-//       var x1 = x0 + score[j] * wid_bar;
-//     //  console.log(colors[j]);
-//       ctx.fillStyle = colors[j % colors.length];
-//       ctx.fillRect(x0, y, x1 - x0, hgt_bar);
-// //      ctx.fill();
-//       x0 = x1;
-//
-//     }
-//     ctx.strokeStyle = 'black';
-//     ctx.lineWidth = 0.4;
-//     ctx.rect(left + (right - left) * .2, y, wid_bar, hgt_bar);
-//     ctx.stroke();
-//
-//     var name = data.analysisset[i][data.field_id];
-//     if (typeof name !== 'undefined') {
-//       ctx.fillStyle = 'black';
-//       var sw = ctx.measureText(name).width;
-//       //console.log(name + " at " + sw);//(left + (right - left) * 0.2 - sw) + ', ' + y);
-//       ctx.fillText(name, left + (right - left) * 0.2 - sw - aic.__spacer, y + hgt_bar);
-//     }
-// //    ctx.stroke();
-//     ctx.fillStyle = colors[predictions[i].prediction % colors.length];
-// //    console.log(predictions[i].prediction);
-//     ctx.fillText(labels[predictions[i].prediction], aic.__spacer + left + 0.8 * (right - left), y + hgt_bar);
-//
-//     var given = data.analysisset[i][data.field_out];
-//     if (typeof given !== 'undefined') {
-//       console.log(given);
-//       ctx.fillStyle = colors[given % colors.length];
-//       ctx.fillText(given, right + 10, y + hgt_bar);
-//     }
-//     ctx.restore();
-//   }
-//   return cnv;
-// };
 
 aic.initialize = function(key) {
   aic.initialize_components();

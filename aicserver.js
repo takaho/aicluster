@@ -3,8 +3,8 @@
  */
 
 var express = require('express')
-  , routes = require('./routes')
-  , user = require('./routes/user')
+//  , routes = require('./routes')
+//  , user = require('./routes/user')
   , http = require('http')
   , child_process = require('child_process')
   , fs = require('fs')
@@ -136,7 +136,7 @@ function process_upload(req, res) {
         options = options.concat(['--verbose']);
       }
       //, '--verbose'];
-      if (typeof iteration !== 'undefined' && 1 < iteration && iteration < 100) {
+      if (typeof iteration !== 'undefined' && 1 < iteration && iteration <= 1000) {
         options = options.concat(['--iteration', iteration])
       }
       console.log(options.join(' '));
