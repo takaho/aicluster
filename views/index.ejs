@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <!--
+    <script type="text/javascript" src="javascripts/jquery-2.2.0.min.js" ></script>
+  -->
+    <script src="https://code.jquery.com/jquery-2.2.0.js"></script>
+    <style type="text/css">
+      .annotation {font-size:x-small; color:gray}
+    </style>
+  </head>
+  <body>
+    <h1><%=title %></h1>
+    <% if (message) { %>
+      <p id="message"><%= message %></p>
+    <% } %>
+    <% if (key) { %>
+      Your key is <%= key %>.
+    <% } %>
+    <form method="post" action="/" id="fileform" enctype="multipart/form-data">
+      <table>
+        <tr><th>Training data</th><td><input type="file" name="training"></input></td></tr>
+        <tr><th>Analysis data</th><td><input type="file" name="analysis"></input></td></tr>
+        <tr><th>Number of decision trees</th><td><input type="text" name="num_trees" value="20"></input></td></tr>
+        <tr><th>Max depth of a tree</th><td><input type="text" name="depth" value="4"></input></td></tr>
+        <tr><th>Iterations <sup>*</sup></th><td><input type="text" name="iteration" value="0"></input></td></tr>
+        <tr><th>Column for ID</th><td><input type="text" name="idcolumn" value="ID"></input></td></tr>
+        <tr><th>Column for output</th><td><input type="text" name="outcolumn" value="OUT"></input></td></tr>
+      </table>
+      <input type="submit" value="Submit"><br />
+      <p class="annotation">* It is used to determine weights of properties.</p>
+    </form>
+  </body>
+</html>

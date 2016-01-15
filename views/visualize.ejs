@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel="stylesheet" href="http://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+    <!--
+    <script type="text/javascript" src="javascripts/jquery-2.2.0.min.js" ></script>
+  -->
+    <script src="https://code.jquery.com/jquery-2.2.0.js"></script>
+    <script src="http://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+
+    <script type="text/javascript" src="javascripts/aicvisualize.js"></script>
+
+    <script type="text/javascript">
+    $(document).ready(function() {
+      aic.initialize("<%=key%>", "#contents");
+    });
+    </script>
+  </head>
+  <body>
+    <div id="contents">
+    </div>
+  </body>
+</html>
