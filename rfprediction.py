@@ -18,6 +18,7 @@ def load_table(filename, id_field=None, output_field=None):
         ext = filename[rpos + 1:].lower()
     # CSV
     table = None
+
     if ext == 'xlsx':
         import openpyxl
         table = []
@@ -28,15 +29,29 @@ def load_table(filename, id_field=None, output_field=None):
                 table.append([x_.value for x_ in row])
     elif ext == 'xls':
         try:
+            table = []
             import xlrd
             book = xlrd.open_workbook(filename)
-            sheet = book.sheets[0]
+            sheet = book.sheets()[0]#[0]
             for rn in range(sheet.nrows):
                 row = sheet.row(rn)
                 values = [row[c].value for c in range(sheet.ncols)]
                 table.append(values)
         except:
+            table = None
             pass
+    elif ext == 'txt':
+        table = []
+        with open(filename) as fi:
+            items = fi.readline().strip().split('\t')
+            for line in fi:
+                items = []
+                for item in line.strip().split('\t'):
+                    if re.match('\\-?\\d*\\.?\\d+$', item):
+                        items.append(float(item))
+                    else:
+                        items.append(item)
+                table.append(items)
     if table is None: # CSV
         import csv
         table = []
@@ -45,9 +60,29 @@ def load_table(filename, id_field=None, output_field=None):
             for row in reader:
                 if len(row) > 1:
                     table.append(row)
+    # fix integer values
+    for rn, row in enumerate(table):
+        for cn, val in enumerate(row):
+            if isinstance(val, float):
+                if (val - round(val)) < 1e-5:
+                    row[cn] = int(val)
 
     # determine fields
-    header = table[0]
+    header_row = -1
+    for rn in range(len(table)):
+        num = 0
+        for cn, item in enumerate(table[rn]):
+            if item is not None:
+                if (isinstance(item, str) or isinstance(item, unicode)) and len(item) > 0:
+                    num += 1
+                elif isinstance(item, int):
+                    num += 1
+        if num > 3:
+            header_row = rn
+            break
+    if header_row < 0:
+        raise Exception('no field row found')
+    header = [(item if isinstance(item, str) or isinstance(item, unicode) else repr(item))for item in table[header_row]]
     props = {}
     index_output = -1
     index_id = -1
@@ -56,16 +91,19 @@ def load_table(filename, id_field=None, output_field=None):
             index_output = i
         elif val == id_field and index_id < 0:
             index_id = i
-        elif val is not None and len(val) > 0 and val not in props:# and val != 'ID_REF' and val.lower() != 'id':
-            props[val] = i
+        else:
+            #val = repr(val)
+            if val is not None and len(val) > 0 and val not in props:# and val != 'ID_REF' and val.lower() != 'id':
+                props[val] = i
     if index_output < 0:
         raise Exception('No output field in {}'.format(filename))
 
     data = []
+
     available_properties = {}
     for p in props.keys(): available_properties[p] = 0
     rownum = 0
-    for row in table[1:]:
+    for row in table[header_row + 1:]:
         datum = {}
         num_accepted = 0
         datum[KEYWORD_OUTPUT] = row[index_output]
@@ -87,6 +125,7 @@ def load_table(filename, id_field=None, output_field=None):
                     num_accepted += 1
             except:
                 val = None
+                raise
             datum[pr] = val
         if num_accepted > len(props) // 2:
             data.append(datum)
@@ -139,6 +178,9 @@ def generate_classifier(data, fields=None, max_depth=4, num_trees=20):
     output_groups = []
     for datum in data:
         label = datum[KEYWORD_OUTPUT]
+        if not isinstance(label, str) and not isinstance(label, unicode):
+            label = repr(label)
+            datum[KEYWORD_OUTPUT] = label
         if label not in l2n:
             l2n[label] = len(l2n)
             output_groups.append(label)

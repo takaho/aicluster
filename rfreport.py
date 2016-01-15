@@ -47,8 +47,9 @@ def draw_bar_chart(names, predicted, group_labels=None, size=400, filename=None)
     image = Image.new('RGB', (size, size))
     draw = ImageDraw.ImageDraw(image)
     draw.rectangle(((0,0),(size,size)), fill=(255,255,255))
+    num_individuals = len(predicted)
 #    num_trees = forest.n_estimators
-    num_individuals = len(names)
+    p = len(names)
     ycnv = lambda i : ((i + .5) * size) / (num_individuals + 1)
     xcnv = lambda p : float((p + 0.15) * size * 0.7)
     draw.rectangle(((0,0),(size,size)), fill=(255,255,255))
@@ -81,6 +82,7 @@ def draw_bar_chart(names, predicted, group_labels=None, size=400, filename=None)
                 label = '{}'.format(decision)
             #label = decisions[i]
             #label = output_groups[decisions[i]]
+
             draw.text((x1 + spacer, y0), label, fill=color)
     image.save(filename_bar)
     return filename_bar
@@ -367,7 +369,7 @@ def generate_report(key, data, dstdir, timestamp, verbose=False):
                 return contents
     except Exception as e:
         sys.stderr.write('ERROR :{}\n'.format(repr(e)))
-        raise
+#        raise
         print(key)
         return '<!--ERROR-->'.format(repr(e).replace('>', ''))
     return '<!--NO_DATA:{}-->'.format(key)

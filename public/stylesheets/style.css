@@ -18,5 +18,9 @@ td, th {
 th { background: #ccc; }
 tr:nth-child(even) { background:#f0f0f0; }
 
+.rawdata td {
+  padding-left:10px;
+  padding-right:10px;
+}
 /* dialog */
 .no-close .ui-dialog-titlebar-close {display: none }

@@ -115,11 +115,24 @@ aic.visualize = function(data) {
   $(document).tooltip();
 };
 
+aic.__arrange_float = function(val, maximum_figures) {
+  var f = 10;
+  var esr = Math.pow(0.1, maximum_figures + 1);
+  for (var i = 0; i < maximum_figures; i++) {
+    var m = val * f;
+    if (Math.abs(m - Math.round(m)) < esr) {
+      return val.toFixed(i + 1);
+    }
+    f *= 10;
+  }
+  return val.toFixed(maximum_figures + 1);
+};
+
 /**
   Create rawdata table.
 */
 aic.generate_rawdata_table = function(data) {
-  var table = $('<table>');
+  var table = $('<table>').attr('class', 'rawdata');
   var fields = data.field;
   var field_id = data.field_id;
   var field_out = data.field_out;
@@ -162,9 +175,16 @@ aic.generate_rawdata_table = function(data) {
     } else {
       tr.append($('<td>'));
     }
+    var row = values[i];
     for (j = 0; j < fields.length; j++) {
       if (fields[j] !== field_id && fields[j] != field_out) {
-        tr.append($('<td>').text(values[i][fields[j]]));
+        var val = row[fields[j]];
+        if (val % 1 == 0) { // integer
+          val = parseInt(val);
+        } else {
+          val = aic.__arrange_float(val, 4);
+        }
+        tr.append($('<td>').text(val));//values[i][fields[j]]));
       }
     }
   }
