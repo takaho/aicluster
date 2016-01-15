@@ -3,9 +3,7 @@
   <head>
     <title><%= title %></title>
     <link rel='stylesheet' href='/stylesheets/style.css' />
-    <!--
-    <script type="text/javascript" src="javascripts/jquery-2.2.0.min.js" ></script>
-  -->
+
     <script src="https://code.jquery.com/jquery-2.2.0.js"></script>
     <style type="text/css">
       .annotation {font-size:x-small; color:gray}
@@ -13,12 +11,6 @@
   </head>
   <body>
     <h1><%=title %></h1>
-    <% if (message) { %>
-      <p id="message"><%= message %></p>
-    <% } %>
-    <% if (key) { %>
-      Your key is <%= key %>.
-    <% } %>
     <form method="post" action="/" id="fileform" enctype="multipart/form-data">
       <table>
         <tr><th>Training data</th><td><input type="file" name="training"></input></td></tr>
