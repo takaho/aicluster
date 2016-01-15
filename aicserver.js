@@ -59,7 +59,7 @@ function send_json_message(res, message) {
   res.end();
 };
 
-/**
+/** rename the name of temporary file as having extension of original file
 */
 function __rename_file_with_extension(file) {
   if (file === null || typeof file === 'undefined' || typeof file.name !== 'string' || typeof file.path !== 'string' || file.name === '') {
@@ -72,6 +72,18 @@ function __rename_file_with_extension(file) {
   var filename_dst = temp.path({suffix:ext});
   fs.rename(filepath, filename_dst);
   return filename_dst;
+}
+
+/** Remove temporary files */
+function __remove_temporary_files(filenames) {
+  if (typeof filenames === 'string') {
+    filenames = [filenames];
+  }
+  for (var i = 0; i < filenames.length; i++) {
+    if (typeof filenames !== 'undefined' && filenames[i] !== null && fs.existsSync(filenames[i])) {
+      fs.unlink(filenames[i]);
+    }
+  }
 }
 
 /**
@@ -169,6 +181,8 @@ function process_upload(req, res) {
               if (err) {
                 process.stderr.write('failed to set failure flag on ' + key + '\n');
               }
+              // remove temporary files
+              __remove_temporary_files([filename_output, trainingfile, analysisfile]);
             });
           } else {
             aicsvr.save_data(filename_db, table_db, {data:data, key:key, state:1}, function(err) {
