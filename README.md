@@ -17,5 +17,7 @@ To install additional packages for web server, run the following command before 
 
  npm install
 
-The server starts with "node aicserver" or "forever aicserver" if you have the package "forever"
+The server starts with "node aicserver" or "forever aicserver" if you have the package "forever."
+The default port of the server is 8091 and you can access the page at the URL http://localhost:8091/.
+
 
