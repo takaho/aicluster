@@ -20,6 +20,12 @@ if (typeof process.stderr === 'undefined') {
   }
 }
 
+/**
+  Display modal dialog while loading and on error
+  Parameters :
+     code : not used currently, but negative values means errors
+     message : Message shown on display
+*/
 aic.display_message = function(code, message) {
   var modal = code <= 0;
   if (aic.__dialog === null) {
@@ -28,7 +34,9 @@ aic.display_message = function(code, message) {
     aic.__dialog.text(message);
   }
 };
-
+/**
+  Hide dialog after load.
+  */
 aic.hide_message = function() {
   if (aic.__dialog) {
     aic.__dialog.dialog("close");
@@ -36,6 +44,13 @@ aic.hide_message = function() {
   }
 }
 
+/**
+  Asynchronous loading from server using unique keys. If the contents are loaded, this function call aic.initialize_components to display results.
+
+  Parameters
+    key : Provided key by server
+    element_id (optional): identifier of container element
+*/
 aic.load_data = function(key, element_id) {
   if (aic.__verbose) {process.stderr.write('loading data : ' + key);}
   if (element_id) {
@@ -69,27 +84,50 @@ aic.load_data = function(key, element_id) {
       });
 };
 
-
+/**
+  Clear all components
+*/
 aic.initialize_components = function() {
   $(aic.__container).children().remove();
 };
 
+/**
+  Generate several elements and place them on the page.
+*/
 aic.visualize = function(data) {
 //  console.log(data);
   var conditions = data.condition;
   var num_trees = conditions.num_trees;
   var tree_depth = conditions.depth;
   var prediction = data.prediction;
+
+  // statistics
+  if (prediction) {
+    var result_table = aic.create_result_table(data);
+    var condition_table = aic.create_condition_table(data);
+    var panel = $('<div class="figure">');
+    try {
+      if (data.analysisset[0][data.field_out]) { // where analysis set has answer
+        panel.append($('<h2>').text('Results')).append(result_table);
+      }
+    } catch (e) {
+      console.log(e);
+    }
+    panel.append($('<h2>').text('Conditions')).append(condition_table);
+
+    $(aic.__container).append(panel);
+  }
+
   // prediction
   if (prediction) {
-    var result_table = aic.generate_prediction_table(data);
+    var result_table = aic.create_prediction_table(data);
     var panel = $('<div class="figure">').append($('<h2>').text('Results')).append(result_table);
     $(aic.__container).append(panel);
   }
 
   // loadings
   if (data.weight) {
-    var weight_table = aic.generate_weight_table(data);
+    var weight_table = aic.create_weight_table(data);
     table_title = $('<h2>').text('Property loadings');
     var panel = $('<div class="figure">').append(table_title).append(weight_table);
     $(aic.__container).append(panel);
@@ -107,12 +145,84 @@ aic.visualize = function(data) {
   if (data.analysisset) {
     var panel = $('<div class="figure">');
     panel.append($('<h2>').text('Analysis data'));
-    panel.append(aic.generate_rawdata_table(data));
+    panel.append(aic.create_rawdata_table(data));
     $(aic.__container).append(panel);
   }
 
   // jquery-ui tooltip
   $(document).tooltip();
+};
+
+/**
+  Create a table showing experimental conditions
+*/
+aic.create_condition_table = function(data) {
+  var labels = data.group_label;
+  var condition = data.condition;
+  var table = $('<table>').attr('class', 'sstable');
+  // conditions
+  $('<tr>').append($('<td>').text('Num. samples')).append($('<td>').text(data.analysisset.length)).appendTo(table);
+  $('<tr>').append($('<td>').text('Num. groups')).append($('<td>').text(labels.length)).appendTo(table);
+
+  $('<tr>').append($('<td>').text('Max depth')).append($('<td>').text(condition.depth)).appendTo(table);
+  $('<tr>').append($('<td>').text('Num. trees')).append($('<td>').text(condition.num_trees)).appendTo(table);
+  $('<tr>').append($('<td>').text('Iteration')).append($('<td>').text(condition.iterations)).appendTo(table);
+
+  // Results
+  return table;
+};
+
+/**
+  Create results
+*/
+aic.create_result_table = function(data) {
+  var ratio_solo = 0.0;
+  var ratio_aggregated = 0.0;
+  var table = $('<table>').attr('class', 'sstable');
+  var answers = [];
+  var field = data.field_out;
+  var labels = data.group_label;
+  for (var i = 0; i < data.analysisset.length; i++) {
+    var prop = data.analysisset[i][field];
+    var gid = -1;
+    for (var j = 0; j < labels.length; j++) {
+      if (prop == labels[j]) {
+        gid = j;
+        break;
+      }
+    }
+    answers.push(gid);
+  }
+  var n00 = 0, n01 = 0, n10 = 0, n11 = 0;
+  var pred = data.prediction;
+  for (var i = 0; i < pred.length; i++) {
+    var given = answers[i];
+    if (given < 0) { continue; }
+    var solo = pred[i].best_tree;
+    var aggr = pred[i].prediction;
+    if (solo === given) {
+      n00 ++;
+    } else {
+      n01 ++;
+    }
+    if (aggr === given) {
+      n10 ++;
+    } else {
+      n11 ++;
+    }
+  }
+  if (n00 + n01 > 0) {
+    ratio_solo = n00 / (n00 + n01);
+  }
+  if (n10 + n11 > 0) {
+    ratio_aggregated = n01 / (n01 + n11);
+  }
+
+  // conditions
+  $('<tr>').append($('<td>').text('Aggregation')).append($('<td>').text((ratio_aggregated * 100).toFixed(2) + ' %')).appendTo(table);
+  $('<tr>').append($('<td>').text('Solo')).append($('<td>').text((ratio_aggregated * 100).toFixed(2) + ' %')).appendTo(table);
+
+  return table;
 };
 
 aic.__arrange_float = function(val, maximum_figures) {
@@ -131,7 +241,7 @@ aic.__arrange_float = function(val, maximum_figures) {
 /**
   Create rawdata table.
 */
-aic.generate_rawdata_table = function(data) {
+aic.create_rawdata_table = function(data) {
   var table = $('<table>').attr('class', 'rawdata');
   var fields = data.field;
   var field_id = data.field_id;
@@ -353,7 +463,7 @@ aic.__create_label_data_element = function(value, labels) {
 /**
   Create a table element containing predicted results.
 */
-aic.generate_prediction_table = function(data) {
+aic.create_prediction_table = function(data) {
   var having_rawdata = typeof data.analysisset !== 'undefined' && data.analysisset !== null;
   var i, j;
   var tr;
@@ -415,7 +525,7 @@ aic.generate_prediction_table = function(data) {
 /**
   Generate loadings of parameters in HTML elements.
 */
-aic.generate_weight_table = function(data) {
+aic.create_weight_table = function(data) {
   var table = $('<table>').attr('id', 'weight_table');
   $('<tr>').append($('<th>').text('Property')).append($('<th>').text('Loading')).appendTo(table);
   var weights = [];

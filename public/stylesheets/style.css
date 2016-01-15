@@ -22,5 +22,10 @@ tr:nth-child(even) { background:#f0f0f0; }
   padding-left:10px;
   padding-right:10px;
 }
+.sstable td {
+  font-size: large;
+  padding:10px;
+  font-family: Geneva serif;
+}
 /* dialog */
 .no-close .ui-dialog-titlebar-close {display: none }
