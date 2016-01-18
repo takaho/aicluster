@@ -250,6 +250,34 @@ function display_results(req, res) {
   res.render('visualize', params);
 }
 
+/**
+Provide name and keys
+*/
+function get_models(req, res) {
+  // sqlite3 : select id, name from models
+  var obj = {'001':'test model1', '002':'test model2'};
+  res.writeHead(200, {'Content-Type':'aplication/json'});
+  res.write(JSON.stringify(obj));
+  res.end();
+};
+
+function get_model_fields(req, res) {
+  var model_id = req.query['model_id'];
+  res.end();
+};
+
+// save or remove
+function manage_model(req, res) {
+  var model_id = req.query['model_id'];
+  var command = req.query['command'];
+  res.end();
+};
+
+function predict_data(req, res) {
+  var model_id = req.query['model_id'];
+  res.render('/');
+};
+
 /////////////////////////////////////
 ////// Server configurations ////////
 /////////////////////////////////////
@@ -294,8 +322,10 @@ app.get('/', function(req, res) {
 
 app.get('/retrieve', retrieve_data);
 app.get('/result', display_results);
+app.get('/getmodel', get_model);
 
 app.post('/', process_upload);
+app.post('/predict', predict_data);
 
 aicsvr.verbose(__verbose);
 http.createServer(app).listen(app.get('port'), function(){

@@ -9,6 +9,12 @@ KEYWORD_ID = '__id__'
 KEYWORDS_NON_NUMERIC = set([KEYWORD_OUTPUT, KEYWORD_ID])
 MARKER_COLORS = ((255,100,100), (100,255,100), (100,100,255), (224,192,0), (128,0,192), (90,224,192))
 
+# Python3 support
+try:
+    basestring
+except NameError:
+    basestring = str
+
 def load_table(filename, id_field=None, output_field=None):
     """Load Excel or CSV file """
     rpos = filename.rfind('.')
@@ -73,7 +79,7 @@ def load_table(filename, id_field=None, output_field=None):
         num = 0
         for cn, item in enumerate(table[rn]):
             if item is not None:
-                if (isinstance(item, str) or isinstance(item, unicode)) and len(item) > 0:
+                if isinstance(item, basestring) and len(item) > 0:
                     num += 1
                 elif isinstance(item, int):
                     num += 1
@@ -82,7 +88,7 @@ def load_table(filename, id_field=None, output_field=None):
             break
     if header_row < 0:
         raise Exception('no field row found')
-    header = [(item if isinstance(item, str) or isinstance(item, unicode) else repr(item))for item in table[header_row]]
+    header = [(item if isinstance(item, basestring) else repr(item)) for item in table[header_row]]
     props = {}
     index_output = -1
     index_id = -1
@@ -109,12 +115,18 @@ def load_table(filename, id_field=None, output_field=None):
         datum[KEYWORD_OUTPUT] = row[index_output]
         if index_id < 0:
             datum[KEYWORD_ID] = 'ID:{}'.format(rownum)
-        elif isinstance(row[index_id], str) is False and isinstance(row[index_id], unicode) is False:
+        elif not isinstance(row[index_id], basestring):
             datum[KEYWORD_ID] = repr(row[index_id])
         else:
             datum[KEYWORD_ID] = row[index_id]
+        #print(props)
         for pr, col in props.items():
             item = row[col]
+            if item is None:
+                datum[pr] = None
+                continue
+#            if item is None: # missing data
+#
             #print(col, item, item.__class__)
             try:
                 val = float(item)
@@ -178,7 +190,7 @@ def generate_classifier(data, fields=None, max_depth=4, num_trees=20):
     output_groups = []
     for datum in data:
         label = datum[KEYWORD_OUTPUT]
-        if not isinstance(label, str) and not isinstance(label, unicode):
+        if not isinstance(label, basestring):
             label = repr(label)
             datum[KEYWORD_OUTPUT] = label
         if label not in l2n:
@@ -263,13 +275,14 @@ def get_total_scores(tree, node_id=0):
         raise ValueError("invalid node id {}".format(node_id))
     left_child = tree.children_left[node_id]
     right_child = tree.children_right[node_id]
+#    print(left_child, right_child)
     if left_child == leaf_id:
+#        print(tree.value[node_id])
         lvals = tree.value[node_id][0]
         rvals = []
     else:
         lvals = get_total_scores(tree, left_child)
         rvals = get_total_scores(tree, right_child)
-
     values = [0] * max(len(lvals), len(rvals))
     for i, v in enumerate(lvals): values[i] += v
     for i, v in enumerate(rvals): values[i] += v
@@ -284,12 +297,14 @@ def evaluate(tree, node_id, vector):
         raise ValueError("invalid node id {}".format(node_id))
     left_child = tree.children_left[node_id]
     right_child = tree.children_right[node_id]
+    #print(vector)
     # output score
     if left_child == leaf_id:
         return tree.value[node_id][0]
 
     feature = tree.feature[node_id]
     threshold = tree.threshold[node_id]
+    #print(feature, threshold, len(vector), vector)
     if vector[feature] < threshold:
         return evaluate(tree, left_child, vector)
     else:
@@ -370,210 +385,210 @@ def get_decision_results(forest, data, fields):
         results.append({'prediction':detected, 'score':scores})
     return results
 
-def plot_prediction(forest, data, **kwargs):
-    """Generate 3D plot for 3-group data
-    retrun : PNG filename"""
-    fields = kwargs.get('fields', None)
-    size = kwargs.get('size', 500)#500#1000
-    msize = kwargs.get('marker_size', 5)
-    fontsize = kwargs.get('font_size', 24)
-    fontname = kwargs.get('font', '/Library/Fonts/Courier New.ttf')
-    filename_graph = kwargs.get('filename_graph', None)
-    filename_bar = kwargs.get('filename_bar', None)
-    output_groups = kwargs.get('output_groups', None)
-    fields = kwargs.get('fields', None)
-    verbose = kwargs.get('verbose', False)
-
-    if fields is None:
-        fields = sorted([f_ for f_ in data[0].keys() if f_ not in KEYWORDS_NON_NUMERIC])
-        if verbose:
-            sys.stderr.write('fields were interpreted as {} elements\n'.format(len(fields)))
-    elif verbose:
-        sys.stderr.write('{} fields\n'.format(len(fields)))
-
-    if output_groups is None:
-        dimensions = 0
-        not_available = False
-        output_groups = []
-        for datum in data:
-            if KEYWORD_OUTPUT not in datum:
-                not_available = True
-                continue
-            gn = output_groups[output_groups]
-            if gn not in output_groups:
-                output_groups.append(gn)
-                dimensions += 1
-        if not_available:
-            output_groups = None
-    else:
-        dimensions = len(output_groups)
-
-    num_trees = forest.n_estimators
-    decisions = []
-    results = []
-    for i, datum in enumerate(data):
-        vector = [datum[x_] for x_ in fields]
-        scores = get_group_score(forest, vector)
-        decision = [int(round(x_ * num_trees)) for x_ in scores]
-        detected = 0
-        maxscore = decision[0]
-        for i, v in enumerate(decision):
-            if v > maxscore:
-                maxscore = v
-                detected = i
-        results.append(decision)
-        if output_groups is None:
-            decisions.append(detected)
-        else:
-            decisions.append(output_groups[detected])
-
-    # return only decisions
-    if filename_graph is None and filename_bar is None: return decisions
-    if filename_graph == filename_bar:
-        filename_graph = None # bar graph is prior
-
-    if filename_bar is not None:
-        image = Image.new('RGB', (size, size))
-        draw = ImageDraw.ImageDraw(image)
-        draw.rectangle(((0,0),(size,size)), fill=(255,255,255))
-        num_trees = forest.n_estimators
-        num_individuals = len(data)
-        ycnv = lambda i : ((i + .5) * size) / (num_individuals + 1)
-        xcnv = lambda p : float((p + 0.15) * size * 0.7)
-        draw.rectangle(((0,0),(size,size)), fill=(255,255,255))
-        colors = MARKER_COLORS
-        lcolors = {}
-        for i, n in enumerate(output_groups):
-            lcolors[n] = colors[i]
-        for i, result in enumerate(results):
-            t = 0
-            coeff = 1.0 / sum(result)
-            y0 = ycnv(i)
-            y1 = ycnv(i + 0.8)
-            for j, v in enumerate(result):
-                ratio = v * coeff
-                x0 = xcnv(t)
-                x1 = xcnv(t + ratio)
-                draw.rectangle(((x0,y0),(x1,y1)), outline=(0,0,0), fill=colors[j])
-                t += ratio
-            name = data[i].get(KEYWORD_ID, '{}'.format(i + 1))
-            spacer = size * 0.02
-            x0 = xcnv(0)
-            x1 = xcnv(1)
-            draw.text((x0 - draw.textsize(name)[0] - spacer, y0), name, fill=(0,0,0))
-            if decisions[i] is not None:#output_groups is not None:
-                label = decisions[i]
-                #label = output_groups[decisions[i]]
-                draw.text((x1 + spacer, y0), label, fill=lcolors[label])
-        image.save(filename_bar)
-
-    if filename_graph is None:
-        return decisions
-
-    def project_3d(point):
-        points = [float(x_) / maximum for x_ in point]
-        x = points[0]
-        y = points[1]
-        if len(points) < 3:
-            z = 0
-        else:
-            z = points[2]
-        x = 1.0 - x
-        vx = size * .5 * (x * .9 + y * .3 + .5)
-        vy = size * .6 - size * .4 * ((x * .3 - y * .9) * .5 + z)
-        return vx, vy
-    def project_2d(point):
-        x = size * (.1 + .8 * point[0] / maximum)
-        y = size * (0.9 - .8 * point[1] / maximum)
-        return x, y
-
-    if dimensions <= 2:
-        projection_func = project_2d
-    else:
-        projection_func = project_3d
-
-    image = Image.new('RGB', (size, size))
-    draw = ImageDraw.ImageDraw(image)
-    draw.rectangle(((0,0),(size,size)), fill=(255,255,255))
-    maximum = forest.n_estimators
-    #
-    #font = ImageFont.truetype('/Library/Fonts//Courier New.ttf', 24)
-    try:
-        font = ImageFont.truetype(fontname, size=fontsize)
-    except:
-        font = None
-    #draw.text(project((-1,0,0)), 'O', fill=(0,0,0), font=font)
-    dotcolors = {}
-    colors = MARKER_COLORS
-    if output_groups is None:
-        output_groups = []
-        for datum in data:
-            if KEYWORD_OUTPUT not in datum:
-                output_groups = None
-                break
-            gn = output_groups[output_groups]
-            if gn not in output_groups:
-                output_groups.append(gn)
-                dotcolors[gn] = colors[gn % len(colors)]
-    else:
-        for i, gn in enumerate(output_groups):
-            dotcolors[gn] = colors[i % len(colors)]
-
-    for identifier, datum in enumerate(data):
-        result = results[identifier]
-        xy = projection_func(result)
-
-        outline = (0,0,0)
-        given = None if KEYWORD_OUTPUT not in datum else datum[KEYWORD_OUTPUT]
-        #print(result, xy, given)
-        if given is not None and given != decisions[identifier]:
-            if KEYWORD_ID in datum:
-                label = datum[KEYWORD_ID]
-            else:
-                label = '{}'.format(identifier + 1)
-            outline = dotcolors[given]#colors[detected % len(colors)]
-            fill = (255,255,2555)
-            draw.text((xy[0] + msize, xy[1]), label, fill=(128,128,128), font=font)
-        else:
-            fill = dotcolors[given]#colors[detected]
-            outline = (0,0,0)
-        draw.ellipse((xy[0]-msize, xy[1]-msize, xy[0]+msize, xy[1]+msize),
-            fill=fill, outline=outline)
-    # Axes
-    points = []
-    if dimensions > 2:
-        for i in range(8):
-            points.append(((i % 2) * maximum, (i & 2 != 0) * maximum, (i & 4 != 0) * maximum))
-        for i, pi in enumerate(points):
-            for j, pj in enumerate(points):
-                n = sum([int(pi[k] != pj[k]) for k in range(3)])
-                if n == 1:
-                    p0 = projection_func(pi)
-                    p1 = projection_func(pj)
-                    l = (p0, p1)
-                    draw.line(l, fill=(0,0,0))#[p0,pi])#, fill=(0,0,0))
-        if output_groups is not None:
-            for i, gn in enumerate(output_groups):
-                if i == 0:
-                    xy = projection_func([num_trees * 1.05, 0, 0])
-                elif i == 1:
-                    xy = projection_func([0, num_trees * 1.05, 0])
-                elif i == 2:
-                    xy = projection_func([0, 0, num_trees * 1.05])
-                else:
-                    continue
-                draw.text(xy, gn, fill=(0,0,0), font=font)
-    else:
-        x0, y0 = projection_func([0, 0])
-        x1, y1 = projection_func([maximum, maximum])
-        x2, y2 = projection_func([.5 * maximum, -.1 * maximum])
-        x3, y3 = projection_func([-.1 * maximum, .5 * maximum])
-        draw.rectangle(((x0, y0), (x1, y1)), outline=(0,0,0))
-        draw.text((x2, y2), output_groups[0], fill=(0,0,0))
-        draw.text((x3, y3), output_groups[1], fill=(0,0,0))
-
-    image.save(filename_graph)
-    return decisions
+# def plot_prediction(forest, data, **kwargs):
+#     """Generate 3D plot for 3-group data
+#     retrun : PNG filename"""
+#     fields = kwargs.get('fields', None)
+#     size = kwargs.get('size', 500)#500#1000
+#     msize = kwargs.get('marker_size', 5)
+#     fontsize = kwargs.get('font_size', 24)
+#     fontname = kwargs.get('font', '/Library/Fonts/Courier New.ttf')
+#     filename_graph = kwargs.get('filename_graph', None)
+#     filename_bar = kwargs.get('filename_bar', None)
+#     output_groups = kwargs.get('output_groups', None)
+#     fields = kwargs.get('fields', None)
+#     verbose = kwargs.get('verbose', False)
+#
+#     if fields is None:
+#         fields = sorted([f_ for f_ in data[0].keys() if f_ not in KEYWORDS_NON_NUMERIC])
+#         if verbose:
+#             sys.stderr.write('fields were interpreted as {} elements\n'.format(len(fields)))
+#     elif verbose:
+#         sys.stderr.write('{} fields\n'.format(len(fields)))
+#
+#     if output_groups is None:
+#         dimensions = 0
+#         not_available = False
+#         output_groups = []
+#         for datum in data:
+#             if KEYWORD_OUTPUT not in datum:
+#                 not_available = True
+#                 continue
+#             gn = output_groups[output_groups]
+#             if gn not in output_groups:
+#                 output_groups.append(gn)
+#                 dimensions += 1
+#         if not_available:
+#             output_groups = None
+#     else:
+#         dimensions = len(output_groups)
+#
+#     num_trees = forest.n_estimators
+#     decisions = []
+#     results = []
+#     for i, datum in enumerate(data):
+#         vector = [datum[x_] for x_ in fields]
+#         scores = get_group_score(forest, vector)
+#         decision = [int(round(x_ * num_trees)) for x_ in scores]
+#         detected = 0
+#         maxscore = decision[0]
+#         for i, v in enumerate(decision):
+#             if v > maxscore:
+#                 maxscore = v
+#                 detected = i
+#         results.append(decision)
+#         if output_groups is None:
+#             decisions.append(detected)
+#         else:
+#             decisions.append(output_groups[detected])
+#
+#     # return only decisions
+#     if filename_graph is None and filename_bar is None: return decisions
+#     if filename_graph == filename_bar:
+#         filename_graph = None # bar graph is prior
+#
+#     if filename_bar is not None:
+#         image = Image.new('RGB', (size, size))
+#         draw = ImageDraw.ImageDraw(image)
+#         draw.rectangle(((0,0),(size,size)), fill=(255,255,255))
+#         num_trees = forest.n_estimators
+#         num_individuals = len(data)
+#         ycnv = lambda i : ((i + .5) * size) / (num_individuals + 1)
+#         xcnv = lambda p : float((p + 0.15) * size * 0.7)
+#         draw.rectangle(((0,0),(size,size)), fill=(255,255,255))
+#         colors = MARKER_COLORS
+#         lcolors = {}
+#         for i, n in enumerate(output_groups):
+#             lcolors[n] = colors[i]
+#         for i, result in enumerate(results):
+#             t = 0
+#             coeff = 1.0 / sum(result)
+#             y0 = ycnv(i)
+#             y1 = ycnv(i + 0.8)
+#             for j, v in enumerate(result):
+#                 ratio = v * coeff
+#                 x0 = xcnv(t)
+#                 x1 = xcnv(t + ratio)
+#                 draw.rectangle(((x0,y0),(x1,y1)), outline=(0,0,0), fill=colors[j])
+#                 t += ratio
+#             name = data[i].get(KEYWORD_ID, '{}'.format(i + 1))
+#             spacer = size * 0.02
+#             x0 = xcnv(0)
+#             x1 = xcnv(1)
+#             draw.text((x0 - draw.textsize(name)[0] - spacer, y0), name, fill=(0,0,0))
+#             if decisions[i] is not None:#output_groups is not None:
+#                 label = decisions[i]
+#                 #label = output_groups[decisions[i]]
+#                 draw.text((x1 + spacer, y0), label, fill=lcolors[label])
+#         image.save(filename_bar)
+#
+#     if filename_graph is None:
+#         return decisions
+#
+#     def project_3d(point):
+#         points = [float(x_) / maximum for x_ in point]
+#         x = points[0]
+#         y = points[1]
+#         if len(points) < 3:
+#             z = 0
+#         else:
+#             z = points[2]
+#         x = 1.0 - x
+#         vx = size * .5 * (x * .9 + y * .3 + .5)
+#         vy = size * .6 - size * .4 * ((x * .3 - y * .9) * .5 + z)
+#         return vx, vy
+#     def project_2d(point):
+#         x = size * (.1 + .8 * point[0] / maximum)
+#         y = size * (0.9 - .8 * point[1] / maximum)
+#         return x, y
+#
+#     if dimensions <= 2:
+#         projection_func = project_2d
+#     else:
+#         projection_func = project_3d
+#
+#     image = Image.new('RGB', (size, size))
+#     draw = ImageDraw.ImageDraw(image)
+#     draw.rectangle(((0,0),(size,size)), fill=(255,255,255))
+#     maximum = forest.n_estimators
+#     #
+#     #font = ImageFont.truetype('/Library/Fonts//Courier New.ttf', 24)
+#     try:
+#         font = ImageFont.truetype(fontname, size=fontsize)
+#     except:
+#         font = None
+#     #draw.text(project((-1,0,0)), 'O', fill=(0,0,0), font=font)
+#     dotcolors = {}
+#     colors = MARKER_COLORS
+#     if output_groups is None:
+#         output_groups = []
+#         for datum in data:
+#             if KEYWORD_OUTPUT not in datum:
+#                 output_groups = None
+#                 break
+#             gn = output_groups[output_groups]
+#             if gn not in output_groups:
+#                 output_groups.append(gn)
+#                 dotcolors[gn] = colors[gn % len(colors)]
+#     else:
+#         for i, gn in enumerate(output_groups):
+#             dotcolors[gn] = colors[i % len(colors)]
+#
+#     for identifier, datum in enumerate(data):
+#         result = results[identifier]
+#         xy = projection_func(result)
+#
+#         outline = (0,0,0)
+#         given = None if KEYWORD_OUTPUT not in datum else datum[KEYWORD_OUTPUT]
+#         #print(result, xy, given)
+#         if given is not None and given != decisions[identifier]:
+#             if KEYWORD_ID in datum:
+#                 label = datum[KEYWORD_ID]
+#             else:
+#                 label = '{}'.format(identifier + 1)
+#             outline = dotcolors[given]#colors[detected % len(colors)]
+#             fill = (255,255,2555)
+#             draw.text((xy[0] + msize, xy[1]), label, fill=(128,128,128), font=font)
+#         else:
+#             fill = dotcolors[given]#colors[detected]
+#             outline = (0,0,0)
+#         draw.ellipse((xy[0]-msize, xy[1]-msize, xy[0]+msize, xy[1]+msize),
+#             fill=fill, outline=outline)
+#     # Axes
+#     points = []
+#     if dimensions > 2:
+#         for i in range(8):
+#             points.append(((i % 2) * maximum, (i & 2 != 0) * maximum, (i & 4 != 0) * maximum))
+#         for i, pi in enumerate(points):
+#             for j, pj in enumerate(points):
+#                 n = sum([int(pi[k] != pj[k]) for k in range(3)])
+#                 if n == 1:
+#                     p0 = projection_func(pi)
+#                     p1 = projection_func(pj)
+#                     l = (p0, p1)
+#                     draw.line(l, fill=(0,0,0))#[p0,pi])#, fill=(0,0,0))
+#         if output_groups is not None:
+#             for i, gn in enumerate(output_groups):
+#                 if i == 0:
+#                     xy = projection_func([num_trees * 1.05, 0, 0])
+#                 elif i == 1:
+#                     xy = projection_func([0, num_trees * 1.05, 0])
+#                 elif i == 2:
+#                     xy = projection_func([0, 0, num_trees * 1.05])
+#                 else:
+#                     continue
+#                 draw.text(xy, gn, fill=(0,0,0), font=font)
+#     else:
+#         x0, y0 = projection_func([0, 0])
+#         x1, y1 = projection_func([maximum, maximum])
+#         x2, y2 = projection_func([.5 * maximum, -.1 * maximum])
+#         x3, y3 = projection_func([-.1 * maximum, .5 * maximum])
+#         draw.rectangle(((x0, y0), (x1, y1)), outline=(0,0,0))
+#         draw.text((x2, y2), output_groups[0], fill=(0,0,0))
+#         draw.text((x3, y3), output_groups[1], fill=(0,0,0))
+#
+#     image.save(filename_graph)
+#     return decisions
 
 def select_best_tree(forest, data, fields, output_groups):#, **kwargs):
     """find best classifier tree and give score"""
@@ -828,6 +843,123 @@ def __trim_data_fields(data, fields):
         trimmed.append(values)
     return trimmed
 
+class rfclassifier(object):
+    """minimum emulation class of RandomForestClassifier object"""
+    class rftree(object):
+        def __init__(self, size):
+            self.__size = size
+            self.children_left = [None] * size#num_trees
+            self.children_right = [None] * size#num_trees
+            self.threshold = [None] * size#num_trees
+            self.value = [None] * size#num_trees
+            self.feature = [None] * size#num_trees
+            self.position = [(-1,-1) for i in range(size)]#num_trees)]
+        def set_node(self, idnum, left_id, right_id, feature, threshold):
+            self.children_left[idnum] = left_id
+            self.children_right[idnum] = right_id
+            self.threshold[idnum] = threshold
+            self.feature[idnum] = feature
+            self.value[idnum] = None
+        def set_leaf(self, idnum, value):
+            self.children_left[idnum] = self.children_right[idnum] = sklearn.tree._tree.TREE_LEAF
+            self.feature[idnum] = self.threshold[idnum] = None
+            self.value[idnum] = [value] # counts of each samples
+        def set_location(self, x, y):
+            self.position = (x,y)
+        def serialize(self):
+            nodes = []
+            for i in range(self.__size):
+                nodes.append({'children':(self.children_left[i], self.children_right[i]),
+                    'threshold':self.threshold[i],
+                    'value':self.value[i],
+                    'feature':self.feature[i],
+                    'x':self.position[i][0],
+                    'y':self.position[i][1]})
+            return nodes
+    class rftreeholder(object):
+        def __init__(self, tree):
+            self.tree_ = tree
+
+    def __init__(self, max_depth, num_trees):
+        self.max_depth = max_depth
+        self.num_trees = num_trees
+        self.estimators_ = []#None] * num_trees
+    def add_tree(self, treedata):
+        self.estimators_.append(rfclassifier.rftreeholder(rfclassifier.create_tree(treedata)))
+    def serialize(self):
+        forest = []
+        for i in range(self.num_trees):
+            for est in self.estimators_:
+                forest.append(est.tree_.serialize())
+        return forest
+    def __repr__(self):
+        return json.dumps(self.serialize())
+    @classmethod
+    def create_tree(cls, treedata):
+        tree = rfclassifier.rftree(len(treedata))
+        for i, node in enumerate(treedata):
+            if node['leaf']:
+                tree.set_leaf(i, node['value'])
+            else:
+                children = node['children']
+                tree.set_node(i, children[0], children[1], node['feature'], node['threshold'])
+        return tree
+
+
+def predict_group_by_preset_model(filename_model, filename_input):
+    """Prediction using previously calculated model
+    """
+    with open(filename_model) as fi:
+        model = json.load(fi)
+    fields = model['field']
+    group_labels = model['group_label']
+    rf = model['forest']
+    conditions = model['condition']
+    num_trees = conditions['num_trees']
+    max_depth = conditions['depth']
+    forest = []
+    idcolumn = conditions['id_column']
+    outcolumn = conditions['out_column']
+
+    #print(model['field_id'])
+    #print(model['field_out'])
+    #exit()
+    forest = rfclassifier(max_depth, num_trees)
+    for tree in rf:
+        forest.add_tree(tree)
+    best_tree = rfclassifier.create_tree(model['best_tree'])
+    inputdata = load_table(filename_input, idcolumn, outcolumn)
+    complete_missing_values(inputdata)
+    results = {}
+    for field in 'condition', 'group_label', 'forest', 'weight', 'field_id', 'field_out', 'best_tree':
+        results[field] = model[field]
+    predicted = []
+    for individual in inputdata:#model['forest']:
+        vector = []
+        for field in model['field']:
+            vector.append(individual.get(field, None))
+        scores = get_group_score(forest, vector)
+        best_group = 0
+        best_score = scores[0]
+        for i in range(1, len(scores)):
+            if scores[i] > best_score:
+                best_group = i
+                best_score = scores[i]
+        best_group_solo = 0
+        scores = evaluate(best_tree, 0, vector)
+        best_score = scores[0]
+        for i in range(1, len(scores)):
+            if scores[i] > best_score:
+                best_group_solo = i
+                best_score = scores[i]
+        predicted.append({'score':scores, 'prediction':best_group, 'best_tree':best_group_solo})
+    results['prediction'] = predicted
+    results['analysisset'] =  inputdata
+    results['field'] = fields
+    results['group_label'] = group_labels
+    results['condition'] = conditions
+    return results
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', default=None, help='input CSV file', metavar='filename')
@@ -842,66 +974,81 @@ if __name__ == '__main__':
     parser.add_argument('--without-rawdata', action='store_true', help='remove rawdata from report')
     parser.add_argument('--iteration', type=int, default=0, help='the number of iteration to estimate weights of parameters')
     parser.add_argument('--key', metavar='characters', default=None, help='unique ID')
+    parser.add_argument('--model', metavar='json file', default=None, help='JSON filename of model')
+
     args = parser.parse_args()
 
-    if 2 <= args.n < 200:
-        num_trees = args.n
-    else:
-        num_trees = 20
-    if 2 <= args.d < 10:
-        depth = args.d
-    else:
-        depth = 4
-    if 0 < args.iteration < 1000:
-        iteration = args.iteration
-    else:
-        iteration = 0
-
-    conditions = {}
-    # conditions['Training data'] = args.t
-    # conditions['Analysis data'] = args.i
-    # conditions['Number of trees'] = num_trees
-    # conditions['Maximum depth'] = depth
-    # conditions['Iteration'] = iteration
-    conditions['training_data_file'] = args.t
-    conditions['analysis_data_file'] = args.i
-    conditions['num_trees'] = num_trees
-    conditions['depth'] = depth
-    conditions['iterations'] = iteration
-
-    if args.verbose:
-        for key, value in conditions.items():
-            sys.stderr.write('{}\t{}\n'.format(key, value))
-
-    filename_prediction = args.i if args.i is not None else args.t
-    iteration = args.iteration
+    timestamp = __get_timestamp()
     dstdir = args.o
 
-    # data loading
-    try:
-        trainingset, predictionset, fields \
-        = load_files_and_determine_fields(filename_training=args.t, filename_diagnosis=args.i, field_id=args.I, field_output=args.F, verbose=args.verbose)
-    except Exception as e:
-        sys.stderr.write('error while loading : ' + repr(e))
-        raise e
-    # forest formation
-    try:
-        best_forest, best_tree, weights, output_groups = _obtain_forest(trainingset, predictionset, fields, args.n, args.d, iteration, args.verbose)
-    except Exception as e:
-        sys.stderr.write('error while forest formation : ' + repr(e))
-        raise e
-    # prediction
-    if predictionset is None:
-        predictionset = copy.deepcopy(trainingset)
-    try:
-        predicted = get_decision_results(best_forest, predictionset, fields)
-    except Exception as e:
-        sys.stderr.write('error while prediction : ' + e)
-        raise e
+    if args.model is not None: # prediction using preset model
+        if args.t is not None:
+            raise Exception('Prediction mode does not use training data')
+        summary = predict_group_by_preset_model(args.model, args.i)
+#        print(summary)
+#        exit()
+    else: # prediction mode
 
-    # Save data
-    timestamp = __get_timestamp()
-    summary = pack_json_results(trainingset, predictionset, fields, predicted, best_forest, best_tree, output_groups, weights, conditions)
+        if args.n < 2:
+            num_trees = 2
+        elif args.n > 200:
+            num_trees = 200
+        else:
+            num_trees = args.n
+        if 2 <= args.d < 10:
+            depth = args.d
+        else:
+            depth = 4
+        if 0 < args.iteration < 1000:
+            iteration = args.iteration
+        else:
+            iteration = 0
+
+        conditions = {}
+        # conditions['Training data'] = args.t
+        # conditions['Analysis data'] = args.i
+        # conditions['Number of trees'] = num_trees
+        # conditions['Maximum depth'] = depth
+        # conditions['Iteration'] = iteration
+        conditions['training_data_file'] = args.t
+        conditions['analysis_data_file'] = args.i
+        conditions['num_trees'] = num_trees
+        conditions['depth'] = depth
+        conditions['iterations'] = iteration
+        conditions['id_column'] = args.I
+        conditions['out_column'] = args.F
+
+        if args.verbose:
+            for key, value in conditions.items():
+                sys.stderr.write('{}\t{}\n'.format(key, value))
+
+        filename_prediction = args.i if args.i is not None else args.t
+        iteration = args.iteration
+
+        # data loading
+        try:
+            trainingset, predictionset, fields \
+            = load_files_and_determine_fields(filename_training=args.t, filename_diagnosis=args.i, field_id=args.I, field_output=args.F, verbose=args.verbose)
+        except Exception as e:
+            sys.stderr.write('error while loading : ' + repr(e))
+            raise e
+        # forest formation
+        try:
+            best_forest, best_tree, weights, output_groups = _obtain_forest(trainingset, predictionset, fields, args.n, args.d, iteration, args.verbose)
+        except Exception as e:
+            sys.stderr.write('error while forest formation : ' + repr(e))
+            raise e
+        # prediction
+        if predictionset is None:
+            predictionset = copy.deepcopy(trainingset)
+        try:
+            predicted = get_decision_results(best_forest, predictionset, fields)
+        except Exception as e:
+            sys.stderr.write('error while prediction : ' + e)
+            raise e
+
+        # Save data
+        summary = pack_json_results(trainingset, predictionset, fields, predicted, best_forest, best_tree, output_groups, weights, conditions)
     if args.key: # unique key for interaction with other processes
         summary['key'] = args.key
     if args.without_rawdata: # remove rawdata for privacy concern
@@ -923,4 +1070,4 @@ if __name__ == '__main__':
             json.dump(summary, fo, indent=4, separators=(',', ': '))
         # visualization
         import rfreport
-        rfreport.generate_report_document(summary, dstdir)
+        rfreport.generate_report_document(summary, dstdir, timestamp=timestamp)

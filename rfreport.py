@@ -1,8 +1,13 @@
 import os, sys, re, argparse, math
-import urllib2, tempfile
+import tempfile
 import PIL.Image as Image
 import PIL.ImageDraw as ImageDraw
 import PIL.ImageFont as ImageFont
+
+try:
+    import urllib.request as urllib2
+except ImportError:
+    import urllib2
 
 __default_template =  """<!DOCTYPE HTML>
 <html>
@@ -371,6 +376,7 @@ def generate_report(key, data, dstdir, timestamp, verbose=False):
         sys.stderr.write('ERROR :{}\n'.format(repr(e)))
 #        raise
         print(key)
+        raise
         return '<!--ERROR-->'.format(repr(e).replace('>', ''))
     return '<!--NO_DATA:{}-->'.format(key)
 
@@ -386,7 +392,7 @@ def __get_timestamp():
 def __get_default_contents():
     return __default_template
 
-def generate_report_document(data, destination, filename_template=None):
+def generate_report_document(data, destination, filename_template=None, timestamp=None):
     """Convert results into HTML document
     @Parameters:
         data : dict object containing parameters, data and predicted results
@@ -403,7 +409,8 @@ def generate_report_document(data, destination, filename_template=None):
             contents += fi.readline().strip()
     if os.path.exists(destination) is None:
         os.makedirs(destination)
-    timestamp = __get_timestamp()
+    if timestamp is None:
+        timestamp = __get_timestamp()
     filename_report = os.path.join(destination, 'report_{}.html'.format(timestamp))
     pat = re.compile('<%(.*?)%>', re.M)
     pos = 0
