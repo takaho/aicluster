@@ -115,6 +115,14 @@ aic.visualize = function(data) {
     }
     panel.append($('<h2>').text('Conditions')).append(condition_table);
 
+    // save
+    var button = $('<div>').text('Save').button();
+    button.on('click', function() {
+      console.log('button');
+      console.log(arguments);
+    });
+    panel.append($('input')).append(button);
+
     $(aic.__container).append(panel);
   }
 
@@ -148,6 +156,7 @@ aic.visualize = function(data) {
     panel.append(aic.create_rawdata_table(data));
     $(aic.__container).append(panel);
   }
+
 
   // jquery-ui tooltip
   $(document).tooltip();

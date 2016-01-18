@@ -136,7 +136,7 @@ function open_model_database(filename, table, callback) {
                 process.stderr.write('creating table\n');
               }
               db.serialize(function() {
-                db.run('create table ' + table + ' (id primary key not null, user, date, data blob not null)');
+                db.run('create table ' + table + ' (id primary key not null, user, date, data blob not null, best blob)');
                 db.run('create index index_' + table + ' on ' + table + '(id)');
                 db.close();
                 setTimeout(function(){open_model_database(filename, table, callback);}, 10);
@@ -246,7 +246,7 @@ function save_data(filename, table, contents, callback) {
 /***
   Save a calculated model for prediction of other data
 **/
-function save_model(filename, table, model, callback) {
+function save_model(filename, table, model, best_tree, callback) {
   var user = contents['user'];
   if (!user) {
     user = '';
@@ -259,7 +259,7 @@ function save_model(filename, table, model, callback) {
       if (db) { db.close(); }
     } else {
       if (__verbose) {process.stderr.write('save model data into database\n');}
-      db.run('insert into ' + table + ' values(?, ?, ?, ?)', key, user, date, model,
+      db.run('insert into ' + table + ' values(?, ?, ?, ?, ?)', key, user, date, model,
       function(err) {
         if (err) {
           if (__verbose) {process.stderr.write('ERROR ' + err);}
@@ -271,7 +271,40 @@ function save_model(filename, table, model, callback) {
       });
     }
   });
-};
+}
+
+function get_models(filename, table, callback) {
+  open_model_database(filename, table, function(err, db) {
+    db.serialize(function() {
+      db.each('select id, namefrom ' + table,
+        function(err, row) {
+          callback(err, row);
+        });
+      });
+    db.close();
+  });
+}
+
+function get_model_fields(filename, table, key, callback) {
+  open_model_database(filename, table, function(err, db) {
+    db.get('select model from ' + table + ' where id=?', key,
+      function(err, row) {
+        if (err) {
+          db.close();
+          callback(err);
+        } else {
+          var prop = [];
+          var tree = JSON.parse(row[0])[0];
+          for (var p in tree) {
+            prop.push(p);
+          }
+          db.close();
+          callback(null, prop);
+        }
+      }
+    );
+  });
+}
 
 /**
   Load contents from database using a unique key.
