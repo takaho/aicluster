@@ -19,6 +19,7 @@ var app = express();
 
 var filename_db = 'db/datastore.db';
 var table_db = 'processed_data';
+var table_model = 'saved_model';
 var port_number = 8091;
 var accept_url = 'result';
 var error_url = 'index';
@@ -322,7 +323,7 @@ app.get('/', function(req, res) {
 
 app.get('/retrieve', retrieve_data);
 app.get('/result', display_results);
-app.get('/getmodel', get_model);
+app.get('/getmodel', get_models);
 
 app.post('/', process_upload);
 app.post('/predict', predict_data);

@@ -111,6 +111,50 @@ function __provide_unique_key(db, table, key, callback) {
   });
 }
 
+
+/**
+  Open database connection and call callback function.
+  Parameters:
+    filename : SQLite filename (default in-memory database)
+    table    : SQLite table (default  "repository")
+**/
+function open_model_database(filename, table, callback) {
+  if (typeof filename === 'undefined') {
+    filename = ':memory:';
+  } else if (!fs.existsSync(filename)) {
+    __create_dir(path.dirname(filename));
+  }
+  if (typeof table === 'undefined') { table = "repository"; }
+  if (__verbose) {process.stderr.write('OPEINING : ' + table + '\n'); }
+  var db = new sqlite3.Database(filename,
+    function(err) {
+      db.get('select name from sqlite_master where name=?', table,
+        function(err, row) {
+          if (!err) {
+            if (!row) {
+              if (__verbose) {
+                process.stderr.write('creating table\n');
+              }
+              db.serialize(function() {
+                db.run('create table ' + table + ' (id primary key not null, user, date, data blob not null)');
+                db.run('create index index_' + table + ' on ' + table + '(id)');
+                db.close();
+                setTimeout(function(){open_model_database(filename, table, callback);}, 10);
+              });
+            } else {
+              callback(null, db);
+            }
+          } else {
+            if (!db) { db.close(); }
+            callback(err);
+          }
+        }
+      );
+    }
+  );
+}
+
+
 /**
   This function is used once after spawing the process.
   Set up database and create a file and a table if there are no database.
@@ -191,13 +235,43 @@ function save_data(filename, table, contents, callback) {
         } else {
           if (__verbose) {process.stderr.write('inserted ' + key);}
         }
-        callback(err);
         if (db) { db.close(); }
+        callback(err);
       });
     }
 //    if (db) {db.close();}
   });
 }
+
+/***
+  Save a calculated model for prediction of other data
+**/
+function save_model(filename, table, model, callback) {
+  var user = contents['user'];
+  if (!user) {
+    user = '';
+  }
+  var date = dateformat(Date(), 'isoUtcDateTime');
+  var key = contents['key'];
+  open_model_database(filename, table, function(err, db) {
+    if (err !== null) {
+      callback(err);
+      if (db) { db.close(); }
+    } else {
+      if (__verbose) {process.stderr.write('save model data into database\n');}
+      db.run('insert into ' + table + ' values(?, ?, ?, ?)', key, user, date, model,
+      function(err) {
+        if (err) {
+          if (__verbose) {process.stderr.write('ERROR ' + err);}
+        } else {
+          if (__verbose) {process.stderr.write('inserted ' + key);}
+        }
+        if (db) { db.close(); }
+        callback(err);
+      });
+    }
+  });
+};
 
 /**
   Load contents from database using a unique key.
@@ -259,7 +333,7 @@ function clear_cache(filename, table, callback) {
       }
       db.run('delete from ' + table + ' where date < ?', date, function(err) {
         if (err === null) {
-          process.stderr.write('successfully cleaned\n');
+          process.stderr.write('successfully cleaned expired data\n');
         }
         if (db) {db.close();}
         callback(err);
