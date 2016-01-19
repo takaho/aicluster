@@ -46,6 +46,7 @@ function __sanitize_key(key) {
   return key;
 }
 
+var __already_created_tables = {};
 
 /**
   Open database connection and call callback function.
@@ -65,18 +66,24 @@ function open_database(filename, table, callback) {
     function(err) {
       db.get('select name from sqlite_master where name=?', table,
         function(err, row) {
-          if (!err) {
+          if (err === null) {
             if (!row) {
-              if (__verbose) {
-                process.stderr.write('creating table\n');
+              if (__already_created_tables[table]) {
+                if (__verbose) { process.stderr.write('waiting for ' + table + ' is ready'); }
+                setTimeout(function(){open_database(filename, table, callback);}, 100);
+              } else {
+                if (__verbose) { process.stderr.write('creating table\n'); }
+                db.serialize(function() {
+                  db.run('create table ' + table + ' (id primary key not null, user, date, state int4, data blob not null)');
+                  db.run('create index index_' + table + ' on ' + table + '(id)');
+                  db.close();
+                  __already_created_tables[table] = true;
+                  setTimeout(function(){open_database(filename, table, callback);}, 10);
+                });
               }
-              db.serialize(function() {
-                db.run('create table ' + table + ' (id primary key not null, user, date, state int4, data blob not null)');
-                db.run('create index index_' + table + ' on ' + table + '(id)');
-                db.close();
-                setTimeout(function(){open_database(filename, table, callback);}, 10);
-              });
             } else {
+              if (__verbose) { process.stderr.write(table + ' is already ready\n'); }
+              __already_created_tables[table] = true;
               callback(null, db);
             }
           } else {
@@ -143,18 +150,29 @@ function open_model_database(filename, table, callback) {
     function(err) {
       db.get('select name from sqlite_master where name=?', table,
         function(err, row) {
-          if (!err) {
+          if (err === null) {
             if (!row) {
-              if (__verbose) {
-                process.stderr.write('creating table\n');
+              if (__already_created_tables[table]) {
+                if (__verbose) {
+                  process.stderr.write('waiting for ' + table + ' is ready');
+                }
+                setTimeout(function(){open_model_database(filename, table, callback);}, 100);
+              } else {
+                if (__verbose) {
+                  process.stderr.write('creating table\n');
+                }
+                db.serialize(function() {
+                  db.run('create table ' + table + ' (id primary key not null, name not null, user, date, data blob not null)');//fields blob not null, forest blob not null, best blob)');
+                  db.run('create index index_' + table + ' on ' + table + '(id)');
+                  db.close();
+                  __already_created_tables[table] = true;
+                  setTimeout(function(){open_model_database(filename, table, callback);}, 10);
+                });
               }
-              db.serialize(function() {
-                db.run('create table ' + table + ' (id primary key not null, name not null, user, date, data blob not null)');//fields blob not null, forest blob not null, best blob)');
-                db.run('create index index_' + table + ' on ' + table + '(id)');
-                db.close();
-                setTimeout(function(){open_model_database(filename, table, callback);}, 10);
-              });
             } else {
+              if (__verbose) { process.stderr.write(table + ' is set up\n'); }
+
+              __already_created_tables[table] = true;
               callback(null, db);
             }
           } else {
@@ -288,21 +306,22 @@ function save_data(filename, table, contents, callback) {
 
 **/
 function save_model(filename, model_id, name, table_db, table_model, callback) {
-  console.log('saving ' + model_id + ' as ' + name);
+  //console.log('saving ' + model_id + ' as ' + name);
   open_model_database(filename, table_db, function(err, db) {
     if (err !== null) {
-      console.log('failed to open ' + table_db + ' from ' + table_db);
+      if (__verbose) {
+        process.stderr.write('failed to open ' + table_db + ' from ' + table_db + '\n');
+      }
       callback(err);
       db.close();
     } else {
       db.get('select id, user, date, data from ' + table_db + ' where id=?', model_id,
         function(err, row) { // row : key, user, date, state, data
           if (err) {
-            console.log('failed to load ' + model_id + ' from ' + table_db);
+            process.stderr.write('failed to load ' + model_id + ' from ' + table_db + '\n');
             db.close();
             callback(err);
           } else {
-            console.log(row);
             var user = row.user;
             var date = row.date;
             var data = JSON.parse(row.data.toString());//[3].toString());
@@ -316,11 +335,11 @@ function save_model(filename, model_id, name, table_db, table_model, callback) {
 //            CREATE TABLE __saved__ (ID not null primary key, USER, NAME, DATE, DATA blob);
             db.run('insert or replace into ' + table_model + ' values(?, ?, ?, ?, ?)', model_id, name, user, date, JSON.stringify(data),
              function(err) {
-              if (err) {
-                console.log(err);
-              } else {
-                console.log('successfully saved');
-              }
+              // if (err) {
+              //   console.log(err);
+              // } else {
+              //   console.log('successfully saved');
+              // }
               db.close();
             });
           }
@@ -341,9 +360,7 @@ function get_models(filename, table, callback) {
         function(err, rows) {
           var models = {};
           if (err === null) {
-            console.log('OK');
             for (var i = 0; i < rows.length; i++) {
-              console.log(i + ' : ' + rows[i]);
               models[rows[i].id] = rows[i].name;
             }
           }
@@ -456,7 +473,6 @@ function save_model_file(filename, table, key, callback) {
     }
     db.get('select data from ' + table + ' where id=?', key,
       function(err, row) {
-        console.log(err);
         if (err) {
           callback(err);
         }
@@ -466,7 +482,7 @@ function save_model_file(filename, table, key, callback) {
 //        console.log(row.data.toString());
         fs.writeSync(fd, row.data.toString(), {encoding:'utf-8'});
         fs.closeSync(fd);
-        console.log('temporary filename ' + ft);
+//        console.log('temporary filename ' + ft);
         callback(null, ft);
       }
     );

@@ -14,7 +14,7 @@ var aicsvr = require('./dblibs.js');
 var temp = require('temp');
 var crypto = require('crypto');
 var async = require('async');
-
+var open = require('open');
 var app = express();
 
 var filename_db = 'db/datastore.db';
@@ -23,6 +23,7 @@ var table_model = 'saved_model';
 var port_number = 8091;
 var accept_url = 'result';
 var error_url = 'index';
+var pure_server = false;
 
 var page_parameters = {title:'aiCluster webservice', author:'Takaho A. Endo', message:null, key:null};
 var python_program = 'rfprediction.py'
@@ -416,6 +417,8 @@ for (var i = 0; i < process.argv.length; i++) {
     i++;
   } else if (arg === '--db') {
     filename_db = process.argv[++i];
+  } else if (arg === '--server') {
+    pure_server = true;
   }
 }
 
@@ -475,5 +478,8 @@ http.createServer(app).listen(app.get('port'), function(){
   //   });
   if (__verbose) {
     console.log("Express server listening on port " + app.get('port'));
+  }
+  if (!pure_server) {
+    open('http://localhost:' + port_number + '/');
   }
 });
