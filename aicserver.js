@@ -13,7 +13,7 @@ var express = require('express')
 var aicsvr = require('./dblibs.js');
 var temp = require('temp');
 var crypto = require('crypto');
-var temp = require('temp');
+var async = require('async');
 
 var app = express();
 
@@ -82,6 +82,7 @@ function __remove_temporary_files(filenames) {
   }
   for (var i = 0; i < filenames.length; i++) {
     if (typeof filenames !== 'undefined' && filenames[i] !== null && fs.existsSync(filenames[i])) {
+      console.log("REMOVING " + filenames[i]);
       fs.unlink(filenames[i]);
     }
   }
@@ -92,7 +93,7 @@ function __remove_temporary_files(filenames) {
   The process execute prediction and save the results in database.
   If the calculation finished, users can download data from the databse using their unique key.
 **/
-function process_upload(req, res) {
+function process_data(req, res) {
   if (__verbose) {
     process.stderr.write('uploading\n');
   }
@@ -101,61 +102,123 @@ function process_upload(req, res) {
     return;
   }
 
-//  console.log(req.files.training);
-  var trainingfile = __rename_file_with_extension(req.files.training);
-  var analysisfile = __rename_file_with_extension(req.files.analysis);
-  if (typeof analysisfile === 'undefined') {
-    analysisfile = null;
+//  var format = req.body.format;
+  var options;
+  console.log('MODE: ' + req.body.mode);
+  for (var p_ in req.files) {
+    console.log(p_);
+  }
+
+  console.log("FILES");
+  console.log(req.files);
+
+  if (req.body.mode === 'predict') {
+    // calculation with preset data
+  //  console.log(req.files.predictionfile);
+    var analysisfile = __rename_file_with_extension(req.files.analysis);
+    console.log(analysisfile);
+//    process.exit();
+    //var modelfile = 'sqlite:' + filename_db + ':' + table_model + ':' + req.body.model;
+    options = [python_program, '-i', analysisfile];
+    //res.end();
+    console.log(options);
+    aicsvr.save_model_file(filename_db, table_db, req.body.model,
+      function(err, filename_tmp) {
+        console.log(filename_tmp);
+        if (err) {
+          res.writeHead(500, {'Content-Type':'text/plain'});
+          res.write('could not retrieve models having id:' + req.body.model);
+          res.end();
+        } else {
+          options.push('--model');
+          options.push(filename_tmp);
+          __spawn_rfprogram(options, function(err, key) {
+            __respond_to_client(err, key, res);
+          });
+//          __remove_temporary_files([filename_tmp]);
+        }
+      }
+    );
   } else {
-//    console.log(analysisfile);
-    analysisfile = null;
+  //  console.log(req.files.training);
+    var trainingfile = __rename_file_with_extension(req.files.training);
+    var analysisfile = __rename_file_with_extension(req.files.analysis);
+    if (typeof analysisfile === 'undefined') {
+      analysisfile = null;
+    } else {
+      console.log(analysisfile);
+//      analysisfile = null;
+    }
+    if (trainingfile === null && analysisfile !== null) {
+      trainingfile = analysisfile;
+      analysisfile = null;
+    }
+    var num_trees = parseInt(req.body.num_trees);
+    var tree_depth = parseInt(req.body.depth);
+    var field_id = req.body.idcolumn;//'ID';
+    var field_out = req.body.outcolumn;//'OUT';
+    var iteration = req.body.iteration;
+
+    // set default values
+    if (isNaN(num_trees)) { num_trees = __defaults.num_trees; }
+    if (isNaN(tree_depth)) { tree_depth = __defaults.tree_depth; }
+    if (typeof field_id !== 'string' || field_id === '') {field_id = __defaults.field_id; }
+    if (typeof field_out !== 'string' || field_out === '') { field_out = __defaults.field_out; }
+
+    var options = [python_program, '-t', trainingfile,
+    '-d', tree_depth, '-n', num_trees, '-F', field_out, '-I', field_id];
+    //, '--verbose'];
+    if (typeof iteration !== 'undefined' && 1 < iteration && iteration <= 1000) {
+      options = options.concat(['--iteration', iteration])
+    }
+    if (analysisfile !== null) {
+      options = options.concat(['-i', analysisfile]);
+    }
+    __spawn_rfprogram(options, function(err, key) {
+      console.log('received key ' + key);
+      __respond_to_client(err, key, res);
+      // remove temporary files
+  //    __remove_temporary_files([trainingfile, analysisfile]);
+    });
   }
-  if (trainingfile === null && analysisfile !== null) {
-    trainingfile = analysisfile;
-    analysisfile = null;
+}
+
+function __respond_to_client(err, key, res) {
+  console.log('responding');
+  console.log(key);
+  if (err) {
+    send_json_message(res, {error:null, key:key});
+  } else {
+    res.writeHead(301, {location:'/result?id=' + key});
+    res.end();
   }
-  var num_trees = parseInt(req.body.num_trees);
-  var tree_depth = parseInt(req.body.depth);
-  var field_id = req.body.idcolumn;//'ID';
-  var field_out = req.body.outcolumn;//'OUT';
-  var iteration = req.body.iteration;
+}
 
-  // set default values
-
-
-  if (isNaN(num_trees)) { num_trees = __defaults.num_trees; }
-  if (isNaN(tree_depth)) { tree_depth = __defaults.tree_depth; }
-  if (typeof field_id !== 'string' || field_id === '') {field_id = __defaults.field_id; }
-  if (typeof field_out !== 'string' || field_out === '') { field_out = __defaults.field_out; }
-
-  var format = req.body.format;
-
+function __spawn_rfprogram(options, callback) {
 //  console.log(analysisfile);
-
   // This process reserve a unique key before calculation.
+//  var format = 'json';
   aicsvr.generate_unique_key(filename_db, table_db, function(err, key) {
     if (err) {
-      if (format === 'json') {
+//      if (format === 'json') {
         send_json_message(res, {error:'FAILED_TO_INSERT_ENTRY_TO_DATABASE'});
-      } else {
-        res.render(filename_error);
-      }
+      // } else {
+      //   res.render(filename_error);
+      // }
     } else {
-      var filename_output = temp.path({suffix:'.json'});
-      // var options = [python_program, '--emulate-wait', '4', '--key', key, '-i', filename_uploaded, '-o', filename_output];
-      var options = [python_program,'--key', key, '-t', trainingfile, '-o', filename_output,
-      '-d', tree_depth, '-n', num_trees, '-F', field_out, '-I', field_id];
       if (__verbose) {
         options = options.concat(['--verbose']);
       }
-      //, '--verbose'];
-      if (typeof iteration !== 'undefined' && 1 < iteration && iteration <= 1000) {
-        options = options.concat(['--iteration', iteration])
-      }
+      options.push('--key');
+      options.push(key);
+      var filename_output = temp.path({suffix:'.json'});
+      options.push('-o');
+      options.push(filename_output);
+
       console.log(options.join(' '));
-      if (analysisfile !== null) {
-        options = options.concat(['-i', analysisfile]);
-      }
+      console.log('CALLBACK with ' + key);
+      callback(null, key);
+
       var proc = child_process.spawn('python', options);
       proc.stdout.on('data', function(data) {
         if (__verbose) {
@@ -168,43 +231,49 @@ function process_upload(req, res) {
         }
       });
       proc.stdout.on('close', function(err) {
-        if (__verbose) {
-          if (err) {
+        if (err) {
+          if (__verbose) {
             process.stderr.write('ERROR in execution : ' + err + '\n');
-          } else {
+          }
+//          callback(err, key);
+        } else {
+          if (__verbose) {
             process.stderr.write('finished ' + key + ', saving to database\n');
           }
-        }
-        var data = fs.readFile(filename_output, function(err, data) {
-          if (err) { // error
-            process.stderr.write('failed to load data from ' + filename_output + '\n');
-            aicsvr.save_data(filename_db, table_db, {key:key, state:-1}, function(err) {
-              if (err) {
-                process.stderr.write('failed to set failure flag on ' + key + '\n');
-              }
-              // remove temporary files
-              __remove_temporary_files([filename_output, trainingfile, analysisfile]);
-            });
-          } else {
-            aicsvr.save_data(filename_db, table_db, {data:data, key:key, state:1}, function(err) {
-              if (err) {
-                process.stderr.write('failed to save data ' + key + '\n');
-              } else {
-                if (__verbose) {process.stderr.write('results were saved into database\n');}
-              }
-            });
-        }});
-      });
+          var data = fs.readFile(filename_output, function(err, data) {
+            //__remove_temporary_files([filename_output]);
+            if (err) { // error
+              process.stderr.write('failed to load data from ' + filename_output + '\n');
+              aicsvr.save_data(filename_db, table_db, {key:key, state:-1}, function(err) {
+                if (err) {
+                  process.stderr.write('failed to set failure flag on ' + key + '\n');
+                }
+              });
+//              callback(err, key);
+            } else {
+              process.stderr.write('saving ' + filename_output + ' to database\n');
+              aicsvr.save_data(filename_db, table_db, {data:data, key:key, state:1}, function(err) {
+                if (err) {
+                  process.stderr.write('failed to save data ' + key + '\n');
+                } else {
+                  if (__verbose) {process.stderr.write('results were saved into database\n');}
+                }
+//                callback(err, key);
+              });
+            }});
+          }});
 
-      if (format == 'json') {
-        send_json_message(res, {error:null, key:key});
-      } else {
-        res.writeHead(301, {location:'/result?id=' + key});
-        // var params = get_parameters();
-        // params.key = key;
-        // res.render(accept_url, params);
-      }
-      res.end();
+
+
+      // if (format == 'json') {
+      //   send_json_message(res, {error:null, key:key});
+      // } else {
+      //   res.writeHead(301, {location:'/result?id=' + key});
+      //   // var params = get_parameters();
+      //   // params.key = key;
+      //   // res.render(accept_url, params);
+      // }
+      // res.end();
     }
   });
 }
@@ -256,15 +325,40 @@ Provide name and keys
 */
 function get_models(req, res) {
   // sqlite3 : select id, name from models
-  var obj = {'001':'test model1', '002':'test model2'};
-  res.writeHead(200, {'Content-Type':'aplication/json'});
-  res.write(JSON.stringify(obj));
-  res.end();
+//  var models = {};
+  aicsvr.get_models(filename_db, table_model, function(err, models) {
+//    console.log('recieved from db');
+//    console.log(models);
+    if (err) {
+      res.writeHead(500, {'Content-Type':'text/plain'});
+      res.write('could not retrieve models');
+      res.end();
+    } else { //if (row === null) {
+      res.writeHead(200, {'Content-Type':'aplication/json'});
+      res.write(JSON.stringify(models));
+      res.end();
+    // } else {
+    //   models[row.id] = row.name;
+    }
+  });
 };
 
 function get_model_fields(req, res) {
-  var model_id = req.query['model_id'];
-  res.end();
+  var model_id = req.query['id'];
+  aicsvr.get_model_fields(filename_db, table_model, model_id,
+    function(err, fields) {
+      if (err) {
+        console.log(err);
+        res.writeHead(500, {'Content-Type':'text/plain'});
+        res.write('could not retrieve fields');
+        res.end();
+      } else {
+        res.writeHead(200, {'Content-Type':'aplication/json'});
+        res.write(JSON.stringify(fields));
+        res.end();
+      }
+    });
+
 };
 
 // save or remove
@@ -275,15 +369,42 @@ function manage_model(req, res) {
 };
 
 function predict_data(req, res) {
-  var model_id = req.query['model_id'];
+  var model_id = req.query['id'];
   res.render('/');
+};
+
+function save_model(req, res) {
+  var model_id = req.body.key;
+  console.log(req.body.key);
+  console.log(req.body.name);
+  if (!model_id) {
+    res.writeHead(500, {'Content-Type':'text/plain'});
+    res.write('No model ID is given');
+    res.end();
+    return;
+  }
+  var name = req.body.name;
+  if (!name) {
+    var date = dateformat(Date(), 'isoUtcDateTime');
+    name = 'Unnamed model ' + (new Date()).toString();
+  }
+  aicsvr.save_model(filename_db, model_id, name, table_db, table_model,
+    function(err) {
+      if (err) {
+        res.writeHead(500, {'Content-Type':'text/plain'});
+        res.write('Commitment of ' + model_id + ' failed');
+        res.end();
+      } else {
+        res.writeHead(200, {'Content-Type':'text/plain'});
+        res.write(model_id + ' commited');
+        res.end();
+      }
+    });
 };
 
 /////////////////////////////////////
 ////// Server configurations ////////
 /////////////////////////////////////
-
-
 
 for (var i = 0; i < process.argv.length; i++) {
   var arg = process.argv[i];
@@ -323,13 +444,34 @@ app.get('/', function(req, res) {
 
 app.get('/retrieve', retrieve_data);
 app.get('/result', display_results);
-app.get('/getmodel', get_models);
+app.get('/models', get_models);
+app.get('/feature', get_model_fields);
 
-app.post('/', process_upload);
+app.post('/', process_data);
 app.post('/predict', predict_data);
+app.post('/save', save_model);
 
 aicsvr.verbose(__verbose);
 http.createServer(app).listen(app.get('port'), function(){
-  aicsvr.setup_db(filename_db, table_db, null); // set up database first
-  console.log("Express server listening on port " + app.get('port'));
+  aicsvr.setup_db(filename_db, table_db, table_model, function(err) {
+    if (err) {
+      console.log(err);
+      console.log('failed to set up database');
+      process.exit(0);
+    }
+  });
+  // async.waterfall([
+  //   // set up database first
+  //   function(next) {
+  //     aicsvr.setup_db(filename_db, table_db, next);
+  //   },
+  //   function(next) {
+  //     aicsvr.setup_db(filename_db, table_model, 0, next);
+  //   }],
+  //   function(err) {
+  //     if (err) { console.log(err); }
+  //   });
+  if (__verbose) {
+    console.log("Express server listening on port " + app.get('port'));
+  }
 });

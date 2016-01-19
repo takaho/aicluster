@@ -980,10 +980,18 @@ if __name__ == '__main__':
 
     timestamp = __get_timestamp()
     dstdir = args.o
+    filename_model = args.model
 
-    if args.model is not None: # prediction using preset model
+    if filename_model is None:
+        if args.t is not None and args.t.endswith('.json'): # JSON model
+            filename_model = args.t
+    else:
         if args.t is not None:
-            raise Exception('Prediction mode does not use training data')
+            raise Exception('Either model construction or prediction can be executed')
+
+    if filename_model is not None: # prediction using preset model
+#        if args.t is not None:
+#            raise Exception('Prediction mode does not use training data')
         summary = predict_group_by_preset_model(args.model, args.i)
 #        print(summary)
 #        exit()

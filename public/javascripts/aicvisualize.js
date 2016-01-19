@@ -9,6 +9,8 @@ aic.__verbose = true;
 aic.__container = '#contents';
 aic.__dialog = null;
 
+aic.current_data_id = null;
+
 if (typeof process === 'undefined') {
   process = {}
 }
@@ -69,6 +71,7 @@ aic.load_data = function(key, element_id) {
         console.log(data);
         if (data.state >= 1 && data.prediction) {
           aic.hide_message();
+          aic.current_data_id = key;
           aic.visualize(data);
         } else if (data.message === 'processing') {
           aic.display_message(0, 'Wait for a while');//calculation failed " + data.message);
@@ -117,12 +120,17 @@ aic.visualize = function(data) {
 
     // save
     var button = $('<div>').text('Save').button();
-    button.on('click', function() {
+    button.click(function() {
       console.log('button');
-      console.log(arguments);
+      console.log($('#model_name'));
+      $.ajax({url:'/save',
+        type:'POST',
+        data:{key:aic.current_data_id, name:$('#model_name').val()},
+        async:true})
+      .success(function(data) { console.log('successfully commited : ' + data); })
+      .fail(function(data) {console.log('failed : ' + data);});
     });
-    panel.append($('input')).append(button);
-
+    panel.append($('<input>').attr('id', 'model_name')).append($('<br>')).append(button);
     $(aic.__container).append(panel);
   }
 
@@ -229,7 +237,7 @@ aic.create_result_table = function(data) {
 
   // conditions
   $('<tr>').append($('<td>').text('Aggregation')).append($('<td>').text((ratio_aggregated * 100).toFixed(2) + ' %')).appendTo(table);
-  $('<tr>').append($('<td>').text('Solo')).append($('<td>').text((ratio_aggregated * 100).toFixed(2) + ' %')).appendTo(table);
+  $('<tr>').append($('<td>').text('Solo')).append($('<td>').text((ratio_solo * 100).toFixed(2) + ' %')).appendTo(table);
 
   return table;
 };
@@ -564,8 +572,81 @@ aic.create_weight_table = function(data) {
   return table;
 };
 
-
+// construct visualization page
 aic.initialize = function(key) {
   aic.initialize_components();
   aic.load_data(key);
+};
+
+aic.load_models = function() {
+  console.log('load models');
+  $.ajax({url:'/models', type:'get'})
+    .success(function(data) {
+      console.log(data);
+      var selection = $('#model');
+//      var flag = selection.prop('disabled');
+//      selection.prop('disabled', false);
+      selection.children().remove();
+      if (data.length == 0) {
+        selection.append($('<option>').attr('value', '').text('No model saved'));
+        $('#predictionbutton').prop('disabled', true);
+      } else {
+        selection.append($('<option>').attr('value', '').text('Select saved model'));
+        for (var prop in data) {
+          console.log(selection);
+          console.log(prop);
+          selection.append($('<option>').attr('value', prop).text(data[prop]));
+        }
+        console.log(selection);
+      }
+      //selection.prop('disabled', flag);
+    })
+    .fail(function() {
+      console.log('failed to load models');
+    });
+};
+
+aic.display_fields = function() {
+  var model_id = $('#model').val();
+  if (typeof model_id !== 'string' || model_id.length < 4) {
+    console.log('no data id set');
+    return;
+  }
+  console.log(name);
+  $.ajax({url:'/feature', type:'get', data:{"id":model_id}})
+    .success(function(data) {
+      console.log('feature obtained');
+      console.log(data);
+    })
+    .fail(function() {
+      console.log('could not retrieve features');
+    });
+
+
+};
+
+// construct start page
+aic.display_models = function() {
+  $('#constructionbutton')
+    .on('click', function() {
+      $('#prediction input').prop('disabled', true);//.animate({opacity:0.2});
+      $('#construction input').prop('disabled', false);//.animate({opacity:1.0});
+      $('#prediction').animate({opacity:0.2});
+      $('#construction').animate({opacity:1.0});
+
+    });
+    $('#predictionbutton')
+      .on('click', function() {
+        $('#prediction input').prop('disabled', false);//.animate({opacity:0.2});
+        $('#construction input').prop('disabled', true);//.animate({opacity:1.0});
+        $('#prediction').animate({opacity:1.0});
+        $('#construction').animate({opacity:0.2});
+        // $('#construction input').prop('disabled', true).animate({opacity:0.2});
+        // $('#prediction input').prop('disabled', false).animate({opacity:1.0});
+      });
+  $('#model').change(aic.display_fields);
+
+  $('#constructionbutton').click();
+
+  aic.load_models();
 };
