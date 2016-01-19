@@ -278,6 +278,7 @@ function save_data(filename, table, contents, callback) {
   var date = dateformat(Date(), 'isoUtcDateTime');
   var key = contents['key'];
   var data = contents['data'];
+  if (!data) { data = JSON.stringify({}); }
   open_database(filename, table, function(err, db) {
     if (err !== null) {
       callback(err);
@@ -285,6 +286,9 @@ function save_data(filename, table, contents, callback) {
     } else {
       if (__verbose) {process.stderr.write('insert data into database\n');}
       var state = __states.SUCCESS;
+      if (contents['state']) {
+        state = contents['state'];
+      }
       db.run('insert or replace into ' + table + ' values(?, ?, ?, ?, ?)', key, user, date, state, data,
       function(err) {
         if (err) {

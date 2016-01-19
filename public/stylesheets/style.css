@@ -27,5 +27,8 @@ tr:nth-child(even) { background:#f0f0f0; }
   padding:10px;
   font-family: Geneva serif;
 }
+
+input#model_name {font-size:large; float:left;}
+
 /* dialog */
 .no-close .ui-dialog-titlebar-close {display: none }

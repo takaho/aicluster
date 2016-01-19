@@ -11,6 +11,9 @@ aic.__dialog = null;
 
 aic.current_data_id = null;
 
+aic.__label_colors = ['CornflowerBlue','LightPink', 'Teal', 'Peru', 'DarkMagenta', 'GoldenRod', 'LightBlue', 'LightSteelBlue', 'RebeccaPurple'];
+
+
 if (typeof process === 'undefined') {
   process = {}
 }
@@ -110,7 +113,7 @@ aic.visualize = function(data) {
     var condition_table = aic.create_condition_table(data);
     var panel = $('<div class="figure">');
     try {
-      if (data.analysisset[0][data.field_out]) { // where analysis set has answer
+      if (result_table !== null && data.analysisset[0][data.field_out]) { // where analysis set has answer
         panel.append($('<h2>').text('Results')).append(result_table);
       }
     } catch (e) {
@@ -118,11 +121,9 @@ aic.visualize = function(data) {
     }
     panel.append($('<h2>').text('Conditions')).append(condition_table);
 
-    // save
+    // save button
     var button = $('<div>').text('Save').button();
     button.click(function() {
-      console.log('button');
-      console.log($('#model_name'));
       $.ajax({url:'/save',
         type:'POST',
         data:{key:aic.current_data_id, name:$('#model_name').val()},
@@ -165,7 +166,6 @@ aic.visualize = function(data) {
     $(aic.__container).append(panel);
   }
 
-
   // jquery-ui tooltip
   $(document).tooltip();
 };
@@ -195,7 +195,6 @@ aic.create_condition_table = function(data) {
 aic.create_result_table = function(data) {
   var ratio_solo = 0.0;
   var ratio_aggregated = 0.0;
-  var table = $('<table>').attr('class', 'sstable');
   var answers = [];
   var field = data.field_out;
   var labels = data.group_label;
@@ -214,7 +213,7 @@ aic.create_result_table = function(data) {
   var pred = data.prediction;
   for (var i = 0; i < pred.length; i++) {
     var given = answers[i];
-    if (given < 0) { continue; }
+    if (given < 0) { continue; } // not determined
     var solo = pred[i].best_tree;
     var aggr = pred[i].prediction;
     if (solo === given) {
@@ -232,10 +231,16 @@ aic.create_result_table = function(data) {
     ratio_solo = n00 / (n00 + n01);
   }
   if (n10 + n11 > 0) {
-    ratio_aggregated = n01 / (n01 + n11);
+    ratio_aggregated = n10 / (n10 + n11);
+  }
+
+  // no given results
+  if (n00 + n01 < 1 && n10 + n11 < 1) {
+    return null;
   }
 
   // conditions
+  var table = $('<table>').attr('class', 'sstable');
   $('<tr>').append($('<td>').text('Aggregation')).append($('<td>').text((ratio_aggregated * 100).toFixed(2) + ' %')).appendTo(table);
   $('<tr>').append($('<td>').text('Solo')).append($('<td>').text((ratio_solo * 100).toFixed(2) + ' %')).appendTo(table);
 
@@ -465,10 +470,7 @@ aic.draw_best_tree = function(data) {
   ctx.restore();
 
   return cnv;
-  //var
 }
-
-aic.__label_colors = ['CornflowerBlue','LightPink', 'Teal', 'Peru', 'DarkMagenta', 'GoldenRod', 'LightBlue', 'LightSteelBlue', 'RebeccaPurple'];
 
 aic.__create_label_data_element = function(value, labels) {
   var td = $('<td>');
@@ -591,8 +593,9 @@ aic.initialize = function(key) {
   aic.load_data(key);
 };
 
+// get models of saved forests
 aic.load_models = function() {
-  console.log('load models');
+//  console.log('load models');
   $.ajax({url:'/models', type:'get'})
     .success(function(data) {
       console.log(data);
@@ -606,11 +609,8 @@ aic.load_models = function() {
       } else {
         selection.append($('<option>').attr('value', '').text('Select saved model'));
         for (var prop in data) {
-          console.log(selection);
-          console.log(prop);
           selection.append($('<option>').attr('value', prop).text(data[prop]));
         }
-        console.log(selection);
       }
       //selection.prop('disabled', flag);
     })
@@ -619,27 +619,27 @@ aic.load_models = function() {
     });
 };
 
+//
 aic.display_fields = function() {
   var model_id = $('#model').val();
   if (typeof model_id !== 'string' || model_id.length < 4) {
-    console.log('no data id set');
+//    console.log('no data id set');
     return;
   }
-  console.log(name);
+//  console.log(name);
   $.ajax({url:'/feature', type:'get', data:{"id":model_id}})
     .success(function(data) {
-      console.log('feature obtained');
-      console.log(data);
+      // console.log('feature obtained');
+      // console.log(data);
     })
     .fail(function() {
-      console.log('could not retrieve features');
+      // console.log('could not retrieve features');
     });
-
-
 };
 
 // construct start page
 aic.display_models = function() {
+  // mutual activation of two modes
   $('#constructionbutton')
     .on('click', function() {
       $('#prediction input').prop('disabled', true);//.animate({opacity:0.2});
@@ -654,8 +654,6 @@ aic.display_models = function() {
         $('#construction input').prop('disabled', true);//.animate({opacity:1.0});
         $('#prediction').animate({opacity:1.0});
         $('#construction').animate({opacity:0.2});
-        // $('#construction input').prop('disabled', true).animate({opacity:0.2});
-        // $('#prediction input').prop('disabled', false).animate({opacity:1.0});
       });
   $('#model').change(aic.display_fields);
 

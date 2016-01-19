@@ -247,7 +247,7 @@ function __spawn_rfprogram(options, callback) {
               process.stderr.write('failed to load data from ' + filename_output + '\n');
               aicsvr.save_data(filename_db, table_db, {key:key, state:-1}, function(err) {
                 if (err) {
-                  process.stderr.write('failed to set failure flag on ' + key + '\n');
+                  process.stderr.write('failed to set failure flag on ' + key + ' : ' + err + '\n');
                 }
               });
 //              callback(err, key);
