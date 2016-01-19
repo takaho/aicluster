@@ -505,6 +505,9 @@ aic.create_prediction_table = function(data) {
       tr.append($('<td>').text(input[data.field_id]));
 //      console.log(input);
       given_label = input[data.field_out];
+    } else {
+      tr.append($('<td>').text('.'));
+      given_label = null;
     }
     if (typeof given_label !== 'undefined') {
       var index = null;
@@ -516,15 +519,25 @@ aic.create_prediction_table = function(data) {
       }
       if (index !== null) {
         aic.__create_label_data_element(index, labels).appendTo(tr);
+      } else {
+        tr.append($('<td>'));
       }
     }
 
     var graph = $('<td>').appendTo(tr);
     var bar = $('<div>').width(bar_width).css('height', bh).css('position', 'relative');
     var x = 0;
+    var accum = 0;
     for (j = 0; j < res.score.length; j++) {
-      var percent = (res.score[j] * 100).toFixed(2) + '%';
-      var w = parseInt(res.score[j] * bar_width * 100) * 0.01;
+      accum += res.score[j];
+    }
+    if (accum <= 0) {
+      continue;
+    }
+    var coeff = 100.0 / accum;
+    for (j = 0; j < res.score.length; j++) {
+      var percent = (res.score[j] * coeff).toFixed(2) + '%';
+      var w = parseInt(res.score[j] * coeff * bar_width) * 0.01;
       var color = aic.__label_colors[j % aic.__label_colors.length];
       var rect = $('<div>').css('background', color).css('left', x + 'px').css('top', '0px').css('width', w).css('height', bh).css('position', 'absolute').attr('title', percent);
       x += w;

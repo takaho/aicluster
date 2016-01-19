@@ -104,27 +104,27 @@ function process_data(req, res) {
 
 //  var format = req.body.format;
   var options;
-  console.log('MODE: ' + req.body.mode);
-  for (var p_ in req.files) {
-    console.log(p_);
-  }
-
-  console.log("FILES");
-  console.log(req.files);
+  // console.log('MODE: ' + req.body.mode);
+  // for (var p_ in req.files) {
+  //   console.log(p_);
+  // }
+  //
+  // console.log("FILES");
+  // console.log(req.files);
 
   if (req.body.mode === 'predict') {
     // calculation with preset data
   //  console.log(req.files.predictionfile);
     var analysisfile = __rename_file_with_extension(req.files.analysis);
-    console.log(analysisfile);
+//    console.log(analysisfile);
 //    process.exit();
     //var modelfile = 'sqlite:' + filename_db + ':' + table_model + ':' + req.body.model;
     options = [python_program, '-i', analysisfile];
     //res.end();
-    console.log(options);
+//    console.log(options);
     aicsvr.save_model_file(filename_db, table_db, req.body.model,
       function(err, filename_tmp) {
-        console.log(filename_tmp);
+//        console.log(filename_tmp);
         if (err) {
           res.writeHead(500, {'Content-Type':'text/plain'});
           res.write('could not retrieve models having id:' + req.body.model);
@@ -146,7 +146,7 @@ function process_data(req, res) {
     if (typeof analysisfile === 'undefined') {
       analysisfile = null;
     } else {
-      console.log(analysisfile);
+//      console.log(analysisfile);
 //      analysisfile = null;
     }
     if (trainingfile === null && analysisfile !== null) {
@@ -175,7 +175,7 @@ function process_data(req, res) {
       options = options.concat(['-i', analysisfile]);
     }
     __spawn_rfprogram(options, function(err, key) {
-      console.log('received key ' + key);
+//      console.log('received key ' + key);
       __respond_to_client(err, key, res);
       // remove temporary files
   //    __remove_temporary_files([trainingfile, analysisfile]);
@@ -184,8 +184,8 @@ function process_data(req, res) {
 }
 
 function __respond_to_client(err, key, res) {
-  console.log('responding');
-  console.log(key);
+  // console.log('responding');
+  // console.log(key);
   if (err) {
     send_json_message(res, {error:null, key:key});
   } else {
@@ -215,8 +215,8 @@ function __spawn_rfprogram(options, callback) {
       options.push('-o');
       options.push(filename_output);
 
-      console.log(options.join(' '));
-      console.log('CALLBACK with ' + key);
+//      console.log(options.join(' '));
+//      console.log('CALLBACK with ' + key);
       callback(null, key);
 
       var proc = child_process.spawn('python', options);
@@ -348,7 +348,7 @@ function get_model_fields(req, res) {
   aicsvr.get_model_fields(filename_db, table_model, model_id,
     function(err, fields) {
       if (err) {
-        console.log(err);
+//        console.log(err);
         res.writeHead(500, {'Content-Type':'text/plain'});
         res.write('could not retrieve fields');
         res.end();
@@ -375,8 +375,8 @@ function predict_data(req, res) {
 
 function save_model(req, res) {
   var model_id = req.body.key;
-  console.log(req.body.key);
-  console.log(req.body.name);
+//  console.log(req.body.key);
+//  console.log(req.body.name);
   if (!model_id) {
     res.writeHead(500, {'Content-Type':'text/plain'});
     res.write('No model ID is given');
@@ -405,6 +405,7 @@ function save_model(req, res) {
 /////////////////////////////////////
 ////// Server configurations ////////
 /////////////////////////////////////
+
 
 for (var i = 0; i < process.argv.length; i++) {
   var arg = process.argv[i];
@@ -452,6 +453,7 @@ app.post('/predict', predict_data);
 app.post('/save', save_model);
 
 aicsvr.verbose(__verbose);
+
 http.createServer(app).listen(app.get('port'), function(){
   aicsvr.setup_db(filename_db, table_db, table_model, function(err) {
     if (err) {

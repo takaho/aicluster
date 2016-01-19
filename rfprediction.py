@@ -946,13 +946,13 @@ def predict_group_by_preset_model(filename_model, filename_input):
                 best_group = i
                 best_score = scores[i]
         best_group_solo = 0
-        scores = evaluate(best_tree, 0, vector)
+        scores_solo = evaluate(best_tree, 0, vector)
         best_score = scores[0]
         for i in range(1, len(scores)):
-            if scores[i] > best_score:
+            if scores_solo[i] > best_score:
                 best_group_solo = i
-                best_score = scores[i]
-        predicted.append({'score':scores, 'prediction':best_group, 'best_tree':best_group_solo})
+                best_score = scores_solo[i]
+        predicted.append({'score':[x_ / sum(scores) for x_ in scores], 'prediction':best_group, 'best_tree':best_group_solo})
     results['prediction'] = predicted
     results['analysisset'] =  inputdata
     results['field'] = fields
