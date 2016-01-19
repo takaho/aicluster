@@ -20,7 +20,7 @@ To install additional packages for web server, run the following command before 
  npm install
 
 The server starts with "node aicserver" or "forever start aicserver."
-The default port of the server is 8091 and you can access the page at the URL http://localhost:8091/.
+The default port of the server is 8091 and you can access the page at the URL http://localhost:8091/. The URL of local host is open when the program starts without --server option.
 
 
 USAGE
@@ -58,9 +58,10 @@ Prediction mode is available if you use '--model' option with JSON file generate
 Web server starts with Express framework with Node.js.
 
 usage
-node aicserver [--port port_number] [--db database path] [--verbose]
+node aicserver [--port port_number] [--db database path] [--server] [--verbose]
 
 optional arguments:
  --port                port number of service (default 8091)
  --db                  SQLite database path (default db/datastore.db)
+ --server              Run without opening browser
  --verbose             verbosity
