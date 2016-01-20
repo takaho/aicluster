@@ -5,10 +5,12 @@ INSTALLATION
 
 This application depends on following Python (>=2.7 or >3.0) packages.
 - wxPython (for GUI users)
-- sklearn
+- sklearn (scikit-learn)
 - numpy
 - scipy
 - pillow (alternative package of Python Imaging Library, version >= 2.6)
+- xlrd (to read Excel .xls files)
+- openpyxl (to read Excel .xlsx files)
 
 Web server requires Javascript environment.
 - Node.js
@@ -58,10 +60,12 @@ Prediction mode is available if you use '--model' option with JSON file generate
 Web server starts with Express framework with Node.js.
 
 usage
-node aicserver [--port port_number] [--db database path] [--server] [--verbose]
+node aicserver [--port port_number] [--db database_path] [--server] [--verbose]
 
 optional arguments:
  --port                port number of service (default 8091)
  --db                  SQLite database path (default db/datastore.db)
  --server              Run without opening browser
  --verbose             verbosity
+
+This command automatically opens top page of the service. You can use the local server with the browser.
