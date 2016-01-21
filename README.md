@@ -1,7 +1,8 @@
-# aicluster
+aicluster
+====
 Practical examination of machine learning
 
-INSTALLATION
+## Requirement
 
 This application depends on following Python (>=2.7 or >3.0) packages.
 - wxPython (for GUI users)
@@ -17,6 +18,7 @@ Web server requires Javascript environment.
 - express
 In addition SQLite3 should be installed to manage database and intall it if your environment does not have it.
 
+## Install
 To install additional packages for web server, run the following command before starting up the service.
 
  npm install
@@ -24,8 +26,7 @@ To install additional packages for web server, run the following command before 
 The server starts with "node aicserver" or "forever start aicserver."
 The default port of the server is 8091 and you can access the page at the URL http://localhost:8091/. The URL of local host is open when the program starts without --server option.
 
-
-USAGE
+## Usage
 
 Command line version can be used as following options
 
@@ -69,3 +70,15 @@ optional arguments:
  --verbose             verbosity
 
 This command automatically opens top page of the service. You can use the local server with the browser.
+
+The python scripts are also available as a stand-alone application.
+If wxPython is installed, the following command open the main window to process the data.
+
+python ADGroup.py
+
+## Licence
+
+[MIT](https://github.com/tcnksm/tool/blob/master/LICENCE)
+
+## Author
+All codes were written by Takaho A. Endo and Koichi Ashizaki, RIKEN IMS-RCAI
