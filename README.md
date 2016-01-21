@@ -1,6 +1,10 @@
-aicluster
+aiCluster
 ====
-Machine learning-based subgroup prediction system running as a standalone GUI application, command line program and a web service.
+  Machine learning-based subgroup prediction system running as a standalone GUI application, command line program and a web service.
+
+## Description
+  The program apply random forest algorithm to cluster given data in tab-deliminated text, CSV and Excel (.xls and .xlsx) format.
+  Predicted results are shown with the outputs of decision trees.
 
 ## Requirement
 
@@ -23,8 +27,14 @@ To install additional packages for web server, run the following command before 
 
     npm install
 
-The server starts with "node aicserver" or "forever start aicserver."
+The server starts with following command.
+
+    node aicserver
+
 The default port of the server is 8091 and you can access the page at the URL http://localhost:8091/. The URL of local host is open when the program starts without --server option.
+
+## Uninstall
+Since all resources are included in the aicluster directory, the application is removed if contents in the directory are deleted.
 
 ## Usage
 
@@ -36,7 +46,7 @@ Command line version can be used as following options
                        [--iteration ITERATION] [--key characters]
                        [--model json file]
 
-optional arguments:
+# Options
 
     -h, --help            show this help message and exit
     -i filename           input CSV file
@@ -63,7 +73,7 @@ Web server starts with Express framework with Node.js.
 
     node aicserver [--port port_number] [--db database_path] [--server] [--verbose]
 
-optional arguments:
+# Options
     --port                port number of service (default 8091)
     --db                  SQLite database path (default db/datastore.db)
     --server              Run without opening browser
