@@ -46,17 +46,18 @@ def load_table(filename, id_field=None, output_field=None):
         except:
             table = None
             pass
-    elif ext == 'txt':
+    elif ext == 'txt': # tab-deliminated plain text
         table = []
         with open(filename) as fi:
-            items = fi.readline().strip().split('\t')
+            #items = fi.readline().strip().split('\t')
+            string_columns = []
             for line in fi:
                 items = []
                 for item in line.strip().split('\t'):
-                    if re.match('\\-?\\d*\\.?\\d+$', item):
-                        items.append(float(item))
-                    else:
-                        items.append(item)
+                    # if re.match('\\-?\\d*\\.?\\d+$', item):
+                    #     items.append(float(item))
+                    # else:
+                    items.append(item)
                 table.append(items)
     if table is None: # CSV
         import csv
@@ -102,7 +103,7 @@ def load_table(filename, id_field=None, output_field=None):
             if val is not None and len(val) > 0 and val not in props:# and val != 'ID_REF' and val.lower() != 'id':
                 props[val] = i
     if index_output < 0:
-        raise Exception('No output field in {}'.format(filename))
+        raise Exception('No index field {} in {}'.format(id_field, filename))
 
     data = []
 
@@ -689,7 +690,7 @@ def _obtain_forest(trainingset, predictionset, fields, num_trees, max_depth, num
             enumerate_features_in_tree(est.tree_, 0, weights_)#weights)
             for w in weights_.keys(): weights[w] = weights.get(w, 0) + 1
         if verbose:
-            sys.stderr.write('{}/{}\t{:.3f}\t{:.3f}\n'.format(loops, num_iteration, score, accuracy))
+            sys.stderr.write('{}/{}\t{:.3f}\t{:.3f}\n'.format(loops + 1, num_iteration, score, accuracy))
         loops += 1
 #        print(loops, num_iteration, loops < num_iteration)
 #    print(weights)
