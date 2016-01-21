@@ -1,6 +1,6 @@
 aicluster
 ====
-Practical examination of machine learning
+Machine learning-based subgroup prediction system running as a standalone GUI application, command line program and a web service.
 
 ## Requirement
 
