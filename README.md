@@ -46,7 +46,7 @@ Command line version can be used as following options
                        [--iteration ITERATION] [--key characters]
                        [--model json file]
 
-# Options
+### Options
 
     -h, --help            show this help message and exit
     -i filename           input CSV file
@@ -73,7 +73,7 @@ Web server starts with Express framework with Node.js.
 
     node aicserver [--port port_number] [--db database_path] [--server] [--verbose]
 
-# Options
+### Options
     --port                port number of service (default 8091)
     --db                  SQLite database path (default db/datastore.db)
     --server              Run without opening browser

@@ -24,6 +24,8 @@ var port_number = 8091;
 var accept_url = 'result';
 var error_url = 'index';
 var pure_server = false;
+var admin_host = 'localhost';
+var server = null;
 
 var page_parameters = {title:'aiCluster webservice', author:'Takaho A. Endo', message:null, key:null};
 var python_program = 'rfprediction.py'
@@ -403,10 +405,45 @@ function save_model(req, res) {
     });
 };
 
+var admin_host
+function process_command(req, res) {
+  var cmd = req.query['cmd'];
+  var message = cmd;
+  var callback = null;
+  if (cmd === 'shutdown') {
+    var host = req.headers['host'];
+    if (host === admin_host + ':' + port_number) {
+      callback = function() {
+        process.stderr.write('exitting\n');
+        process.exit();
+      }
+      message = 'process shutdown\n\n';
+    }
+  }
+  res.writeHead(200, {'Content-Type':'text/plain'});
+  res.write(message);
+  res.end();
+  if (callback) {
+    setTimeout(
+      function() {
+        callback(null, message);
+      }, 1000);
+  }
+};
+
+
 /////////////////////////////////////
 ////// Server configurations ////////
 /////////////////////////////////////
 
+/**
+Commands
+ --admin-host [host_name] : administration host name
+ --server                 : do not launch browser
+ --db                     : database path (SQLite)
+ --port [number]          : port number
+ --verbose                : verbosity
+**/
 
 for (var i = 0; i < process.argv.length; i++) {
   var arg = process.argv[i];
@@ -419,6 +456,8 @@ for (var i = 0; i < process.argv.length; i++) {
     filename_db = process.argv[++i];
   } else if (arg === '--server') {
     pure_server = true;
+  } else if (arg === '--admin-host') {
+    admin_host = process.argv[++i];
   }
 }
 
@@ -450,6 +489,7 @@ app.get('/retrieve', retrieve_data);
 app.get('/result', display_results);
 app.get('/models', get_models);
 app.get('/feature', get_model_fields);
+app.get('/admin', process_command);
 
 app.post('/', process_data);
 app.post('/predict', predict_data);
@@ -457,7 +497,7 @@ app.post('/save', save_model);
 
 aicsvr.verbose(__verbose);
 
-http.createServer(app).listen(app.get('port'), function(){
+server = http.createServer(app).listen(app.get('port'), function(){
   aicsvr.setup_db(filename_db, table_db, table_model, function(err) {
     if (err) {
       console.log(err);
@@ -465,17 +505,6 @@ http.createServer(app).listen(app.get('port'), function(){
       process.exit(0);
     }
   });
-  // async.waterfall([
-  //   // set up database first
-  //   function(next) {
-  //     aicsvr.setup_db(filename_db, table_db, next);
-  //   },
-  //   function(next) {
-  //     aicsvr.setup_db(filename_db, table_model, 0, next);
-  //   }],
-  //   function(err) {
-  //     if (err) { console.log(err); }
-  //   });
   if (__verbose) {
     console.log("Express server listening on port " + app.get('port'));
   }
