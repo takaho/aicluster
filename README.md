@@ -102,7 +102,7 @@ cd docker/miniconda/
 #### aiCluster
 
 ```
-cd docker/miniconda/
+cd docker/aicluster/
 ./build.sh
 ./run.sh
 ```
