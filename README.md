@@ -86,6 +86,29 @@ The python scripts are also available as a stand-alone application.
 
     python ADGroup.py
 
+
+### Docker
+
+You can this docker containers this following commands:
+
+#### Miniconda
+
+```
+cd docker/miniconda/
+./build.sh
+./run.sh
+```
+
+#### aiCluster
+
+```
+cd docker/miniconda/
+./build.sh
+./run.sh
+```
+
+Please view http://localhost:8091 in your browser.
+
 ## Licence
 
 [MIT](https://github.com/tcnksm/tool/blob/master/LICENCE)
